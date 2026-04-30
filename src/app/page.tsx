@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import AuthPages from "@/components/AuthPages";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 /* ──────────────────── Animation wrapper ──────────────────── */
 function FadeIn({
@@ -1326,6 +1327,10 @@ function LandingPage() {
 /* ──────────────────── APP ROUTER ──────────────────── */
 export default function HomePage() {
   const { pageView } = useAuthStore();
+
+  if (pageView === "dashboard") {
+    return <DashboardLayout />;
+  }
 
   if (pageView === "login" || pageView === "signup") {
     return <AuthPages />;

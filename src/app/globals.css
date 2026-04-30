@@ -172,3 +172,35 @@ body {
   background: rgba(37, 211, 102, 0.3);
   color: rgb(241, 245, 249);
 }
+
+/* Dashboard custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(209, 213, 219);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(156, 163, 175);
+}
+
+/* Dashboard light theme scrollbar override */
+.dashboard-light ::-webkit-scrollbar-track {
+  background: rgb(249, 250, 251);
+}
+
+.dashboard-light ::-webkit-scrollbar-thumb {
+  background: rgb(209, 213, 219);
+  border-radius: 3px;
+}
+
+.dashboard-light ::-webkit-scrollbar-thumb:hover {
+  background: rgb(156, 163, 175);
+}

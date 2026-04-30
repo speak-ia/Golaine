@@ -185,8 +185,11 @@ function SignUpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate loading — no backend
-    setTimeout(() => setLoading(false), 2000);
+    // Simulate loading — no backend, redirect to dashboard
+    setTimeout(() => {
+      setLoading(false);
+      setPageView("dashboard");
+    }, 1500);
   };
 
   return (
@@ -326,8 +329,11 @@ function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate loading — no backend
-    setTimeout(() => setLoading(false), 2000);
+    // Simulate loading — no backend, redirect to dashboard
+    setTimeout(() => {
+      setLoading(false);
+      setPageView("dashboard");
+    }, 1500);
   };
 
   return (

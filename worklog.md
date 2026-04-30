@@ -62,3 +62,28 @@ Stage Summary:
 - Frontend-only implementation — no backend, no API calls
 - Auth pages match Venteo dark theme exactly with green (#25D366) accents
 - Smooth AnimatePresence transitions between landing page and auth views
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Implement dashboard with sidebar, header, and layout
+
+Work Log:
+- Analyzed uploaded dashboard screenshot using VLM skill to extract exact design specs
+- Updated Zustand store (src/lib/store.ts): added "dashboard" to PageView, added SidebarView type with 11 navigation items, added sidebarOpen state
+- Created src/components/dashboard/DashboardSidebar.tsx: collapsible sidebar with user profile, menu label, 11 nav items, active state highlighting in green, mobile responsive with overlay
+- Created src/components/dashboard/DashboardHeader.tsx: light green header with dynamic greeting, user name, agent status indicator, date display, search/notification buttons, profile avatar dropdown
+- Created src/components/dashboard/DashboardLayout.tsx: wrapper combining sidebar + header + content area with responsive margin transitions
+- Created src/components/dashboard/DashboardPage.tsx: metric cards, progress bars, orders summary, bar chart, recent activity, placeholder pages for other sidebar views
+- Updated src/app/page.tsx: added DashboardLayout import, updated HomePage router to handle "dashboard" pageView
+- Updated src/components/AuthPages.tsx: both login and signup forms now redirect to dashboard on submit
+- Added dashboard-specific CSS styles
+- Zero ESLint errors, dev server returns 200
+
+Stage Summary:
+- Files created: DashboardSidebar.tsx, DashboardHeader.tsx, DashboardLayout.tsx, DashboardPage.tsx
+- Files modified: store.ts, page.tsx, AuthPages.tsx, globals.css
+- Dashboard matches Venteo design with white sidebar, light green header, light gray content background
+- All 11 sidebar navigation items with proper icons
+- Responsive: collapsible sidebar on desktop, slide-out drawer on mobile
+- Navigation flow: Landing -> Login/Signup -> Dashboard
