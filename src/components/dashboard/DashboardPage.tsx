@@ -245,7 +245,7 @@ function RecentActivity() {
 /* ──────────────────── Placeholder pages ──────────────────── */
 function PlaceholderPage({ title }: { title: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20">
+    <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
       <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
         <LayoutDashboardIcon className="w-10 h-10 text-gray-300" />
       </div>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
   const page = pageMap[sidebarView];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="h-full">
       {page.component}
     </div>
   );
