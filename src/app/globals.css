@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: rgb(10, 10, 10);
+  --foreground: rgb(241, 245, 249);
+  --card: rgb(22, 22, 22);
+  --card-foreground: rgb(241, 245, 249);
+  --popover: rgb(22, 22, 22);
+  --popover-foreground: rgb(241, 245, 249);
+  --primary: rgb(37, 211, 102);
+  --primary-foreground: rgb(10, 10, 10);
+  --secondary: rgb(30, 30, 30);
+  --secondary-foreground: rgb(241, 245, 249);
+  --muted: rgb(30, 30, 30);
+  --muted-foreground: rgb(148, 163, 184);
+  --accent: rgb(30, 30, 30);
+  --accent-foreground: rgb(241, 245, 249);
+  --destructive: rgb(239, 68, 68);
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: rgb(37, 211, 102);
+  --chart-1: rgb(37, 211, 102);
+  --chart-2: rgb(124, 58, 237);
+  --chart-3: rgb(14, 165, 233);
+  --chart-4: rgb(249, 115, 22);
+  --chart-5: rgb(245, 158, 11);
+  --sidebar: rgb(15, 15, 15);
+  --sidebar-foreground: rgb(241, 245, 249);
+  --sidebar-primary: rgb(37, 211, 102);
+  --sidebar-primary-foreground: rgb(10, 10, 10);
+  --sidebar-accent: rgb(30, 30, 30);
+  --sidebar-accent-foreground: rgb(241, 245, 249);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: rgb(37, 211, 102);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  background: rgb(10, 10, 10);
+  color: rgb(241, 245, 249);
+}
+
+/* Typing indicator animation */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.typing-dot-1 {
+  animation: typing-dot 1.4s infinite 0s;
+}
+.typing-dot-2 {
+  animation: typing-dot 1.4s infinite 0.2s;
+}
+.typing-dot-3 {
+  animation: typing-dot 1.4s infinite 0.4s;
+}
+
+/* Pulse dot animation */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Gradient orb animation */
+@keyframes float-orb {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-10px, 10px) scale(0.95);
+  }
+}
+
+.float-orb {
+  animation: float-orb 8s ease-in-out infinite;
+}
+
+.float-orb-slow {
+  animation: float-orb 12s ease-in-out infinite reverse;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(10, 10, 10);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(50, 50, 50);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(70, 70, 70);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(37, 211, 102, 0.3);
+  color: rgb(241, 245, 249);
+}
