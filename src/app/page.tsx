@@ -24,6 +24,8 @@ import {
   TrendingUp,
   Headphones,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
+import AuthPages from "@/components/AuthPages";
 
 /* ──────────────────── Animation wrapper ──────────────────── */
 function FadeIn({
@@ -64,6 +66,7 @@ function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [currency, setCurrency] = useState("$ USD");
+  const { pageView, setPageView } = useAuthStore();
   const currencies = ["$ USD", "€ EUR", "F CFA", "UM"];
 
   useEffect(() => {
@@ -155,18 +158,18 @@ function Navbar() {
                 </div>
               )}
             </div>
-            <a
-              href="#"
-              className="text-sm text-[rgb(148,163,184)] hover:text-white transition-colors"
+            <button
+              onClick={() => setPageView("login")}
+              className="text-sm text-[rgb(148,163,184)] hover:text-white transition-colors cursor-pointer"
             >
               Connexion
-            </a>
-            <a
-              href="#pricing"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            </button>
+            <button
+              onClick={() => setPageView("signup")}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
             >
               Inscription
-            </a>
+            </button>
           </div>
 
           {/* Mobile Hamburger */}
@@ -200,19 +203,18 @@ function Navbar() {
                 </a>
               ))}
               <hr className="border-white/[0.07]" />
-              <a
-                href="#"
-                className="block text-[rgb(148,163,184)] hover:text-white transition-colors py-2"
+              <button
+                onClick={() => { setPageView("login"); setMobileOpen(false); }}
+                className="block w-full text-left text-[rgb(148,163,184)] hover:text-white transition-colors py-2 cursor-pointer"
               >
                 Connexion
-              </a>
-              <a
-                href="#pricing"
-                onClick={() => setMobileOpen(false)}
-                className="block w-full text-center px-5 py-3 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-sm font-semibold text-white"
+              </button>
+              <button
+                onClick={() => { setPageView("signup"); setMobileOpen(false); }}
+                className="block w-full text-center px-5 py-3 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-sm font-semibold text-white cursor-pointer"
               >
                 Inscription
-              </a>
+              </button>
             </div>
           </motion.div>
         )}
@@ -1300,7 +1302,7 @@ function Footer() {
 }
 
 /* ──────────────────── MAIN PAGE ──────────────────── */
-export default function HomePage() {
+function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[rgb(10,10,10)]">
       <Navbar />
@@ -1319,4 +1321,15 @@ export default function HomePage() {
       <Footer />
     </div>
   );
+}
+
+/* ──────────────────── APP ROUTER ──────────────────── */
+export default function HomePage() {
+  const { pageView } = useAuthStore();
+
+  if (pageView === "login" || pageView === "signup") {
+    return <AuthPages />;
+  }
+
+  return <LandingPage />;
 }
