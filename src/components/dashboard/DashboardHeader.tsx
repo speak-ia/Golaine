@@ -163,10 +163,10 @@ export default function DashboardHeader() {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[9999]"
             onClick={() => setProfileOpen(false)}
           />
-          <div className="absolute right-4 sm:right-6 top-[72px] z-50 w-72 bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute right-4 sm:right-6 top-[72px] z-[10000] w-72 bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             {/* User info header */}
             <div className="bg-gradient-to-br from-[#25D366] to-[#16A34A] px-5 py-4">
               <div className="flex items-center gap-3">

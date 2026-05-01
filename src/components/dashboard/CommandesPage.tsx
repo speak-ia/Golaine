@@ -1014,10 +1014,23 @@ export default function CommandesPage() {
                       </td>
                       {/* Statut */}
                       <td className="cmd-td">
-                        <span className={`cmd-badge ${st.bg} ${st.text} ${st.border}`}>
+                        <button
+                          className={`cmd-badge ${st.bg} ${st.text} ${st.border}`}
+                          title="Changer le statut"
+                          onClick={() => {
+                            const statuses: OrderStatus[] = ["en_attente", "confirmee", "en_preparation", "livree", "annulee"];
+                            const currentIdx = statuses.indexOf(order.status);
+                            const nextIdx = (currentIdx + 1) % statuses.length;
+                            setOrders((prev) =>
+                              prev.map((o) =>
+                                o.id === order.id ? { ...o, status: statuses[nextIdx] } : o
+                              )
+                            );
+                          }}
+                        >
                           {st.label}
                           <ChevronDown className="w-3 h-3 opacity-60" />
-                        </span>
+                        </button>
                       </td>
                       {/* Date */}
                       <td className="cmd-td">

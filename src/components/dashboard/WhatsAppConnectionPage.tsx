@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Phone,
   Shield,
@@ -53,9 +53,55 @@ function QRCodeModal({
   const [name, setName] = useState(slotName);
   const [phone, setPhone] = useState(slotPhone || "");
   const [qrTimer, setQrTimer] = useState("14:59");
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Deterministic QR pattern — stable across re-renders
+  const qrPattern = useMemo(() => {
+    return Array.from({ length: 121 }, (_, i) => {
+      const row = Math.floor(i / 11);
+      const col = i % 11;
+      const isCorner =
+        (row < 3 && col < 3) || (row < 3 && col > 7) || (row > 7 && col < 3);
+      // Use a simple deterministic hash instead of Math.random()
+      const hash = ((i * 2654435761) >>> 0) % 100;
+      return isCorner || hash > 50;
+    });
+  }, []);
+
+  // QR timer countdown
+  useEffect(() => {
+    if (step === "qr") {
+      timerRef.current = setInterval(() => {
+        setQrTimer((prev) => {
+          const [mins, secs] = prev.split(":").map(Number);
+          const total = mins * 60 + secs;
+          if (total <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return "00:00";
+          }
+          const next = total - 1;
+          const m = String(Math.floor(next / 60)).padStart(2, "0");
+          const s = String(next % 60).padStart(2, "0");
+          return `${m}:${s}`;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [step]);
 
   const handleShowQR = () => {
     if (!name.trim() || !phone.trim()) return;
+    setQrTimer("14:59");
     setStep("qr");
   };
 
@@ -171,21 +217,12 @@ function QRCodeModal({
                 <div className="absolute inset-0 bg-[#25D366]/10 rounded-2xl blur-xl" />
                 <div className="relative w-full h-full bg-white rounded-2xl border-2 border-[#25D366]/20 p-3 flex items-center justify-center">
                   <div className="grid grid-cols-11 gap-0.5 w-full h-full">
-                    {Array.from({ length: 121 }).map((_, i) => {
-                      const row = Math.floor(i / 11);
-                      const col = i % 11;
-                      const isCorner =
-                        (row < 3 && col < 3) ||
-                        (row < 3 && col > 7) ||
-                        (row > 7 && col < 3);
-                      const isFilled = isCorner || Math.random() > 0.5;
-                      return (
-                        <div
-                          key={i}
-                          className={`rounded-[1px] ${isFilled ? "bg-gray-800" : "bg-gray-100"}`}
-                        />
-                      );
-                    })}
+                    {qrPattern.map((isFilled, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-[1px] ${isFilled ? "bg-gray-800" : "bg-gray-100"}`}
+                      />
+                    ))}
                   </div>
                 </div>
                 {/* WhatsApp overlay */}
@@ -397,20 +434,19 @@ export default function WhatsAppConnectionPage() {
     setShowQR(index);
   };
 
-  const handleConnected = (updatedName?: string, updatedPhone?: string) => {
+  const handleConnected = (name: string, phone: string) => {
     if (showQR !== null) {
       setSlots((prev) => {
         const next = [...prev];
         next[showQR] = {
           ...next[showQR],
           status: "connected",
-          name: updatedName || next[showQR].name,
-          phone: updatedPhone || next[showQR].phone,
+          name,
+          phone,
         };
         return next;
       });
-      const displayName = updatedName || slots[showQR].name;
-      setShowToast(`${displayName} connecté avec succès !`);
+      setShowToast(`${name} connecté avec succès !`);
     }
     setShowQR(null);
     setTimeout(() => setShowToast(null), 3000);

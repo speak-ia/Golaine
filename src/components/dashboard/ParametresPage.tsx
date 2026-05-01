@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   User,
   Building2,
@@ -11,9 +11,7 @@ import {
   Camera,
   Eye,
   EyeOff,
-  Download,
   Copy,
-  RefreshCw,
   Trash2,
   Smartphone,
   Globe,
@@ -222,6 +220,30 @@ function ProfilTab() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const { profilePhoto, setProfilePhoto } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const emailError = email.length > 0 && !isValidEmail(email);
+
+  /* Close dropdowns on outside click */
+  useEffect(() => {
+    if (!langOpen && !tzOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
+        setTzOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [langOpen, tzOpen]);
+
+  const handleSaveProfil = () => {
+    if (!name.trim()) { setFeedback({ type: "error", msg: "Le nom est requis." }); return; }
+    if (!email.trim() || !isValidEmail(email)) { setFeedback({ type: "error", msg: "Veuillez entrer un email valide." }); return; }
+    if (!phone.trim()) { setFeedback({ type: "error", msg: "Le téléphone est requis." }); return; }
+    setFeedback({ type: "success", msg: "Profil mis à jour avec succès !" });
+  };
 
   const langs = ["Français", "English", "Wolof"];
   const timezones = ["UTC+0 GMT", "UTC+1 Dakar"];
@@ -305,8 +327,15 @@ function ProfilTab() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366] transition-all"
+            className={`w-full px-4 py-2.5 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-all ${
+              emailError
+                ? "border-red-500 focus:ring-red-500/30 focus:border-red-500"
+                : "border-gray-200 focus:ring-[#25D366]/30 focus:border-[#25D366]"
+            }`}
           />
+          {emailError && (
+            <p className="text-xs text-red-500 mt-1">Veuillez entrer un email valide.</p>
+          )}
         </div>
 
         <div>
@@ -319,71 +348,74 @@ function ProfilTab() {
           />
         </div>
 
-        {/* Language */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1.5">
-            <Globe className="w-4 h-4 inline mr-1.5" /> Langue
-          </label>
-          <div className="relative">
-            <button
-              onClick={() => { setLangOpen(!langOpen); setTzOpen(false); }}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
-            >
-              {lang}
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`} />
-            </button>
-            {langOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
-                {langs.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => { setLang(l); setLangOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${
-                      l === lang ? "text-[#16A34A] font-medium" : "text-gray-700"
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
+        {/* Language + Timezone wrapped for outside-click ref */}
+        <div ref={dropdownRef}>
+          {/* Language */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              <Globe className="w-4 h-4 inline mr-1.5" /> Langue
+            </label>
+            <div className="relative">
+              <button
+                onClick={() => { setLangOpen(!langOpen); setTzOpen(false); }}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
+              >
+                {lang}
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`} />
+              </button>
+              {langOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
+                  {langs.map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => { setLang(l); setLangOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${
+                        l === lang ? "text-[#16A34A] font-medium" : "text-gray-700"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Timezone */}
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1.5">
-            <Clock className="w-4 h-4 inline mr-1.5" /> Fuseau horaire
-          </label>
-          <div className="relative">
-            <button
-              onClick={() => { setTzOpen(!tzOpen); setLangOpen(false); }}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
-            >
-              {tz}
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${tzOpen ? "rotate-180" : ""}`} />
-            </button>
-            {tzOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
-                {timezones.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => { setTz(t); setTzOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${
-                      t === tz ? "text-[#16A34A] font-medium" : "text-gray-700"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Timezone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">
+              <Clock className="w-4 h-4 inline mr-1.5" /> Fuseau horaire
+            </label>
+            <div className="relative">
+              <button
+                onClick={() => { setTzOpen(!tzOpen); setLangOpen(false); }}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 text-left flex items-center justify-between hover:border-gray-300 transition-colors cursor-pointer"
+              >
+                {tz}
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${tzOpen ? "rotate-180" : ""}`} />
+              </button>
+              {tzOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
+                  {timezones.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => { setTz(t); setTzOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors cursor-pointer ${
+                        t === tz ? "text-[#16A34A] font-medium" : "text-gray-700"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="pt-2">
           <button
-            onClick={() => setFeedback({ type: "success", msg: "Profil mis à jour avec succès !" })}
+            onClick={handleSaveProfil}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#25D366] to-[#16A34A] hover:opacity-90 rounded-xl transition-opacity cursor-pointer"
           >
             Sauvegarder
@@ -823,7 +855,6 @@ function IntegrationsTab() {
   const [sheetsConnected, setSheetsConnected] = useState(false);
   const [mobileConnected, setMobileConnected] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
-  const [regenerateModal, setRegenerateModal] = useState(false);
 
   const MOCK_API_KEY = "sk-golaine-a1b2c3d4e5f6g7h8i9j0";
 
@@ -972,29 +1003,9 @@ function IntegrationsTab() {
               <Copy className="w-4 h-4" />
               {apiKeyCopied ? "Copié !" : "Copier"}
             </button>
-            <button
-              onClick={() => setRegenerateModal(true)}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Régénérer
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Regenerate confirmation */}
-      <ConfirmModal
-        open={regenerateModal}
-        title="Régénérer la clé API"
-        message="Êtes-vous sûr ? L'ancienne clé API sera invalidée immédiatement. Vos intégrations existantes cesseront de fonctionner."
-        confirmLabel="Régénérer la clé"
-        confirmVariant="warning"
-        onConfirm={() => {
-          setRegenerateModal(false);
-        }}
-        onCancel={() => setRegenerateModal(false)}
-      />
     </div>
   );
 }
@@ -1089,7 +1100,6 @@ function FacturationTab() {
                 <th className="text-left py-3 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
                 <th className="text-right py-3 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
                 <th className="text-center py-3 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="text-center py-3 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Facture</th>
               </tr>
             </thead>
             <tbody>
@@ -1101,14 +1111,6 @@ function FacturationTab() {
                   <td className="py-3 px-2 text-center">
                     <StatusBadge label={row.status} variant="success" />
                   </td>
-                  <td className="py-3 px-2 text-center">
-                    <button
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer text-gray-400 hover:text-gray-600"
-                      title="Télécharger"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1119,7 +1121,6 @@ function FacturationTab() {
       {/* Export button */}
       <div className="flex justify-end">
         <button className="px-5 py-2.5 text-sm font-medium text-[#16A34A] bg-[#E8F8EF] hover:bg-[#d0f0de] rounded-xl transition-colors cursor-pointer">
-          <Download className="w-4 h-4 inline mr-2" />
           Exporter les factures
         </button>
       </div>

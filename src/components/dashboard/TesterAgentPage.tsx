@@ -469,10 +469,25 @@ export default function TesterAgentPage() {
 
     const delay = 1200 + Math.random() * 1000;
     setTimeout(() => {
-      const aiResponse = mockAIResponses[responseIndex % mockAIResponses.length];
+      /* Keyword-based contextual response selection */
+      const lowerText = text.toLowerCase();
+      let response: string;
+
+      if (lowerText.includes("prix") || lowerText.includes("combien") || lowerText.includes("coût") || lowerText.includes("tarif")) {
+        response = "Voici nos prix :\n\n👗 Robes Wax — à partir de 5 000 FCFA\n🧣 Pagnes Tissé — 8 000 FCFA\n💅 Huile d'Argan Bio — 12 000 FCFA\n👜 Sac À Main — 6 500 FCFA\n\nLaquelle vous intéresse ?";
+      } else if (lowerText.includes("livraison") || lowerText.includes("commande") || lowerText.includes("envoyer")) {
+        response = "Voici le suivi de votre commande :\n\n📦 Statut : En cours de préparation\n🚚 Livraison prévue sous 24-48h\n📍 Dakar et environs\n\nVoulez-vous commander autre chose ?";
+      } else if (lowerText.includes("merci") || lowerText.includes("super") || lowerText.includes("parfait")) {
+        response = "De rien ! 😊 Merci pour votre confiance. N'hésitez pas à me contacter à tout moment si vous avez d'autres questions. Je suis disponible 24h/24 ! 🙏";
+      } else if (lowerText.includes("bonjour") || lowerText.includes("salut") || lowerText.includes("hello")) {
+        response = "Bonjour ! 😊 Bienvenue chez Golaine Boutique ! Je suis Sophia, votre assistante virtuelle.\n\nComment puis-je vous aider aujourd'hui ? Je peux vous présenter nos produits, gérer vos commandes ou répondre à vos questions.";
+      } else {
+        response = mockAIResponses[responseIndex % mockAIResponses.length];
+      }
+
       const agentMsg: Message = {
         id: `msg-${Date.now()}-agent`,
-        text: aiResponse,
+        text: response,
         sender: "agent",
         timestamp: getTimestamp(),
         read: true,

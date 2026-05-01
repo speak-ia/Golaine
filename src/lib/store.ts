@@ -138,9 +138,13 @@ export const useProductStore = create<ProductStore>((set) => ({
     })),
 
   addCategory: (name) =>
-    set((state) => ({
-      categories: [...state.categories, name],
-    })),
+    set((state) => {
+      const exists = state.categories.some(
+        (c) => c.toLowerCase() === name.toLowerCase()
+      );
+      if (exists) return state;
+      return { categories: [...state.categories, name] };
+    }),
 
   renameCategory: (oldName, newName) =>
     set((state) => ({
