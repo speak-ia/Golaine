@@ -70,7 +70,7 @@ const EMPTY_FORM: ProductFormData = {
   category: "Mode",
   stock: "",
   status: true,
-  image: "",
+  image: "/products/robe-wax.png",
 };
 
 const CATEGORIES = [
@@ -148,17 +148,6 @@ function productToForm(p: Product): ProductFormData {
 }
 
 /* ──────────────────── Product Form ──────────────────── */
-/* ──────────────────── Product Image Placeholder ──────────────────── */
-function ProductImage({ name, category, className }: { name: string; category: string; className?: string }) {
-  const accent = CATEGORY_ACCENT[category] || "from-gray-200 to-gray-300";
-  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "?";
-  return (
-    <div className={`bg-gradient-to-br ${accent} flex items-center justify-center ${className || ""}`}>
-      <span className="text-3xl font-bold text-white/60 select-none">{initials}</span>
-    </div>
-  );
-}
-
 function ProductForm({
   form,
   setForm,
@@ -168,6 +157,30 @@ function ProductForm({
 }) {
   return (
     <div className="space-y-4">
+      {/* Image preview */}
+      <div className="space-y-2">
+        <Label className="text-gray-700">Image du produit</Label>
+        <div className="relative w-full h-40 rounded-xl bg-gray-50 border border-dashed border-gray-200 overflow-hidden flex items-center justify-center">
+          {form.image ? (
+            <img
+              src={form.image}
+              alt="Aperçu"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-gray-400">
+              <ImageIcon className="w-8 h-8" />
+              <span className="text-xs">Aucune image</span>
+            </div>
+          )}
+        </div>
+        <Input
+          value={form.image}
+          onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
+          placeholder="/products/robe-wax.png"
+          className="h-9 text-xs"
+        />
+      </div>
 
       {/* Nom */}
       <div className="space-y-2">
@@ -303,11 +316,21 @@ function ProductCard({
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
+  const gradient = CATEGORY_ACCENT[product.category] || "from-gray-100 to-transparent";
+
   return (
     <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col">
       {/* Image */}
-      <div className="relative h-52 overflow-hidden">
-        <ProductImage name={product.name} category={product.category} className="absolute inset-0 group-hover:scale-105 transition-transform duration-500" />
+      <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "";
+            (e.target as HTMLImageElement).classList.add("hidden");
+          }}
+        />
         {/* Overlay badges */}
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span
@@ -406,8 +429,12 @@ function ProductRow({
   return (
     <div className="group bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 flex items-center gap-4">
       {/* Image */}
-      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-        <ProductImage name={product.name} category={product.category} className="w-full h-full" />
+      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-50">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Info */}
@@ -470,18 +497,18 @@ export default function MesProduitsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "", status: "actif" },
-    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "", status: "actif" },
-    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "", status: "actif" },
-    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "", status: "actif" },
-    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "", status: "actif" },
-    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "", status: "actif" },
-    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "", status: "inactif" },
-    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "", status: "actif" },
-    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "", status: "actif" },
-    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "", status: "actif" },
-    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "", status: "actif" },
-    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "", status: "actif" },
+    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "/products/robe-wax.png", status: "actif" },
+    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "/products/pagne-tisse.png", status: "actif" },
+    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "/products/bissap.png", status: "actif" },
+    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "/products/huile-argan.png", status: "actif" },
+    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "/products/sac-main.png", status: "actif" },
+    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "/products/thiakry.png", status: "actif" },
+    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "/products/collier.png", status: "inactif" },
+    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "/products/baobab.png", status: "actif" },
+    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "/products/tunique.png", status: "actif" },
+    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "/products/savon-noir.png", status: "actif" },
+    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "/products/bijoux.png", status: "actif" },
+    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "/products/cafe-touba.png", status: "actif" },
   ]);
 
   const [search, setSearch] = useState("");
@@ -559,7 +586,7 @@ export default function MesProduitsPage() {
       price: Number(formData.price) || 0,
       category: formData.category,
       stock: Number(formData.stock) || 0,
-      image: formData.image,
+      image: formData.image || "/products/robe-wax.png",
       status: formData.status ? "actif" : "inactif",
     };
     setProducts((prev) => [newProduct, ...prev]);
@@ -860,8 +887,16 @@ export default function MesProduitsPage() {
             {viewingProduct && (
               <>
                 {/* Image header */}
-                <div className="relative h-56 overflow-hidden">
-                  <ProductImage name={viewingProduct.name} category={viewingProduct.category} className="absolute inset-0" />
+                <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                  <img
+                    src={viewingProduct.image}
+                    alt={viewingProduct.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "";
+                      (e.target as HTMLImageElement).classList.add("hidden");
+                    }}
+                  />
                   {/* Status badge */}
                   <span
                     className={`absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
