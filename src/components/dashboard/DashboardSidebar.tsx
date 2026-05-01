@@ -12,6 +12,7 @@ import {
   CalendarDays,
   BarChart3,
   CreditCard,
+  Settings,
   ChevronLeft,
   LogOut,
 } from "lucide-react";
@@ -29,6 +30,7 @@ const menuItems: { id: SidebarView; label: string; icon: React.ElementType }[] =
   { id: "rendezvous", label: "Rendez-vous", icon: CalendarDays },
   { id: "rapport", label: "Rapport hebdo", icon: BarChart3 },
   { id: "plan", label: "Mon Plan", icon: CreditCard },
+  { id: "parametres", label: "Paramètres", icon: Settings },
 ];
 
 export default function DashboardSidebar() {

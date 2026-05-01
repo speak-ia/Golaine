@@ -13,7 +13,8 @@ export type SidebarView =
   | "commandes"
   | "rendezvous"
   | "rapport"
-  | "plan";
+  | "plan"
+  | "parametres";
 
 interface AuthStore {
   pageView: PageView;

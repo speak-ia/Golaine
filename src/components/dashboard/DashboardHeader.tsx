@@ -15,6 +15,7 @@ const pageTitles: Record<SidebarView, string> = {
   rendezvous: "RENDEZ-VOUS",
   rapport: "RAPPORT HEBDO",
   plan: "MON PLAN",
+  parametres: "PARAMÈTRES",
 };
 
 export default function DashboardHeader() {

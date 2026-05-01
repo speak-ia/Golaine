@@ -9,6 +9,17 @@ import {
   Clock,
 } from "lucide-react";
 import { useAuthStore, type SidebarView } from "@/lib/store";
+import MesProduitsPage from "./MesProduitsPage";
+import ConversationsPage from "./ConversationsPage";
+import AgentIAPage from "./AgentIAPage";
+import TesterAgentPage from "./TesterAgentPage";
+import WhatsAppConnectionPage from "./WhatsAppConnectionPage";
+import MonPlanPage from "./MonPlanPage";
+import RendezVousPage from "./RendezVousPage";
+import ParametresPage from "./ParametresPage";
+import ContactsPage from "./ContactsPage";
+import CommandesPage from "./CommandesPage";
+import RapportHebdoPage from "./RapportHebdoPage";
 
 /* ──────────────────── Metric Card ──────────────────── */
 function MetricCard({
@@ -242,32 +253,6 @@ function RecentActivity() {
   );
 }
 
-/* ──────────────────── Placeholder pages ──────────────────── */
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
-      <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">
-        <LayoutDashboardIcon className="w-10 h-10 text-gray-300" />
-      </div>
-      <h2 className="text-xl font-semibold text-gray-700 mb-2">{title}</h2>
-      <p className="text-sm text-gray-400 text-center max-w-sm">
-        Cette section est en cours de développement. Revenez bientôt pour découvrir les fonctionnalités.
-      </p>
-    </div>
-  );
-}
-
-function LayoutDashboardIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
-  );
-}
-
 /* ──────────────────── Main Dashboard Content ──────────────────── */
 function DashboardHome() {
   return (
@@ -348,43 +333,47 @@ export default function DashboardPage() {
     },
     whatsapp: {
       title: "Connecter WhatsApp",
-      component: <PlaceholderPage title="Connecter WhatsApp" />,
+      component: <WhatsAppConnectionPage />,
     },
     agent: {
       title: "Agent IA",
-      component: <PlaceholderPage title="Agent IA" />,
+      component: <AgentIAPage />,
     },
     tester: {
       title: "Tester l'agent",
-      component: <PlaceholderPage title="Tester l'agent" />,
+      component: <TesterAgentPage />,
     },
     produits: {
       title: "Mes produits",
-      component: <PlaceholderPage title="Mes produits" />,
+      component: <MesProduitsPage />,
     },
     conversations: {
       title: "Conversations",
-      component: <PlaceholderPage title="Conversations" />,
+      component: <ConversationsPage />,
     },
     contacts: {
       title: "Contacts",
-      component: <PlaceholderPage title="Contacts" />,
+      component: <ContactsPage />,
     },
     commandes: {
       title: "Commandes",
-      component: <PlaceholderPage title="Commandes" />,
+      component: <CommandesPage />,
     },
     rendezvous: {
       title: "Rendez-vous",
-      component: <PlaceholderPage title="Rendez-vous" />,
+      component: <RendezVousPage />,
     },
     rapport: {
       title: "Rapport hebdo",
-      component: <PlaceholderPage title="Rapport hebdo" />,
+      component: <RapportHebdoPage />,
     },
     plan: {
       title: "Mon Plan",
-      component: <PlaceholderPage title="Mon Plan" />,
+      component: <MonPlanPage />,
+    },
+    parametres: {
+      title: "Paramètres",
+      component: <ParametresPage />,
     },
   };
 
