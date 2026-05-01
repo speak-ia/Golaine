@@ -165,6 +165,7 @@ function generateGradient(): string {
    Custom Modal CSS (inspired by Commandes)
    ═══════════════════════════════════════════════════════════════ */
 const modalStyles = `
+  /* Overlay */
   .cnt-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.45);
@@ -174,6 +175,8 @@ const modalStyles = `
     padding: 16px;
     animation: cnt-fadeIn 0.18s ease;
   }
+
+  /* Modal box */
   .cnt-modal {
     background: #ffffff; border-radius: 14px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
@@ -181,23 +184,33 @@ const modalStyles = `
     animation: cnt-slideUp 0.22s ease;
   }
   .cnt-modal--sm { max-width: 440px; }
-  .cnt-modal--md { max-width: 540px; }
+  .cnt-modal--md { max-width: 560px; }
+
+  /* Header */
   .cnt-modal-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px 16px; border-bottom: 1px solid #f3f4f6;
   }
-  .cnt-modal-header h3 { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
+  .cnt-modal-header h3 {
+    font-size: 16px; font-weight: 700; color: #111827; margin: 0;
+  }
+
+  /* Close button */
   .cnt-modal-close {
     width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
     border-radius: 8px; border: none; background: transparent;
     cursor: pointer; color: #9ca3af; transition: background 0.12s ease, color 0.12s ease;
   }
   .cnt-modal-close:hover { background: #f3f4f6; color: #374151; }
+
+  /* Body & Footer */
   .cnt-modal-body { padding: 20px 24px 24px; }
   .cnt-modal-footer {
     display: flex; align-items: center; justify-content: flex-end;
     gap: 10px; padding: 16px 24px; border-top: 1px solid #f3f4f6;
   }
+
+  /* Buttons */
   .cnt-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 9px 18px; border-radius: 8px; background: #25D366; color: #ffffff;
@@ -219,6 +232,66 @@ const modalStyles = `
     transition: background 0.12s ease, border-color 0.12s ease;
   }
   .cnt-btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+
+  /* Hero section (View modal top) */
+  .cnt-hero {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px; margin: 0 0 6px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #f0f9ff 100%);
+    border-radius: 10px;
+    border: 1px solid #d1fae5;
+  }
+  .cnt-hero-avatar {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: #ffffff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .cnt-hero-name {
+    font-size: 16px; font-weight: 700; color: #111827;
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+  .cnt-hero-sub {
+    font-size: 12px; color: #6b7280;
+    line-height: 1.4;
+  }
+
+  /* Stats row */
+  .cnt-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+    margin: 16px 0 6px;
+  }
+  .cnt-stat-card {
+    background: #f9fafb; border: 1px solid #f3f4f6;
+    border-radius: 10px; padding: 14px 12px;
+    text-align: center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cnt-stat-card:hover {
+    border-color: #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .cnt-stat-value {
+    font-size: 18px; font-weight: 700; color: #111827;
+    line-height: 1.2;
+  }
+  .cnt-stat-value--green { color: #10b981; }
+  .cnt-stat-label {
+    font-size: 10px; font-weight: 600; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-top: 4px;
+  }
+
+  /* Detail rows */
+  .cnt-detail-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #f9fafb; }
+  .cnt-detail-row:last-child { border-bottom: none; }
+  .cnt-detail-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cnt-detail-label { font-size: 11.5px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .cnt-detail-value { font-size: 14px; font-weight: 500; color: #111827; }
+
+  /* Form */
   .cnt-form-group { margin-bottom: 18px; }
   .cnt-form-group:last-child { margin-bottom: 0; }
   .cnt-form-label { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 6px; }
@@ -233,11 +306,17 @@ const modalStyles = `
   .cnt-form-select:focus,
   .cnt-form-textarea:focus { border-color: #25D366; box-shadow: 0 0 0 3px rgba(37,211,102,0.12); }
   .cnt-form-textarea { resize: vertical; min-height: 70px; }
-  .cnt-detail-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f9fafb; }
-  .cnt-detail-row:last-child { border-bottom: none; }
-  .cnt-detail-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .cnt-detail-label { font-size: 11.5px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
-  .cnt-detail-value { font-size: 14px; font-weight: 500; color: #111827; }
+
+  /* Form stats summary */
+  .cnt-form-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+    padding: 14px 16px; background: #f9fafb; border: 1px solid #f3f4f6;
+    border-radius: 10px;
+  }
+  .cnt-form-stat-value { font-size: 16px; font-weight: 700; color: #111827; text-align: center; }
+  .cnt-form-stat-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; margin-top: 2px; }
+
+  /* Animations */
   @keyframes cnt-fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes cnt-slideUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 `;
@@ -249,52 +328,67 @@ function ViewContactModal({ contact, onClose, onEdit }: { contact: Contact; onCl
   return (
     <div className="cnt-overlay" onClick={onClose}>
       <div className="cnt-modal cnt-modal--md" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="cnt-modal-header">
           <h3>Détails du contact</h3>
           <button className="cnt-modal-close" onClick={onClose}><X className="w-[18px] h-[18px]" /></button>
         </div>
+
         <div className="cnt-modal-body">
-          {/* Avatar + Name + Segment */}
-          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${contact.color} flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0`}>
+          {/* Hero section */}
+          <div className="cnt-hero">
+            <div className={`cnt-hero-avatar bg-gradient-to-br ${contact.color}`}>
               {contact.avatar}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-gray-900 truncate">{contact.name}</p>
-              <p className="text-[12px] text-gray-400">{contact.email || "—"}</p>
+              <p className="cnt-hero-name truncate">{contact.name}</p>
+              <p className="cnt-hero-sub">{contact.email || "Pas d'adresse email"}</p>
             </div>
-            <Badge className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${segmentStyles[contact.segment]}`}>
+            <Badge className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${segmentStyles[contact.segment]}`}>
               {contact.segment}
             </Badge>
           </div>
-          {/* Details */}
+
+          {/* Stats row */}
+          <div className="cnt-stats">
+            <div className="cnt-stat-card">
+              <p className="cnt-stat-value">{contact.orders}</p>
+              <p className="cnt-stat-label">Commandes</p>
+            </div>
+            <div className="cnt-stat-card">
+              <p className="cnt-stat-value cnt-stat-value--green">{formatFCFA(contact.totalSpent)}</p>
+              <p className="cnt-stat-label">Total dépensé</p>
+            </div>
+            <div className="cnt-stat-card">
+              <p className="cnt-stat-value" style={{ fontSize: "13px" }}>{contact.lastOrder ? formatDate(contact.lastOrder) : "—"}</p>
+              <p className="cnt-stat-label">Dernière</p>
+            </div>
+          </div>
+
+          {/* Detail rows */}
           <div className="cnt-detail-row">
-            <div className="cnt-detail-icon" style={{ backgroundColor: "#eef2ff" }}><Phone className="w-4 h-4" style={{ color: "#6366f1" }} /></div>
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#eef2ff" }}><Phone className="w-[16px] h-[16px]" style={{ color: "#6366f1" }} /></div>
             <div><p className="cnt-detail-label">Téléphone</p><p className="cnt-detail-value">{contact.phone}</p></div>
           </div>
           <div className="cnt-detail-row">
-            <div className="cnt-detail-icon" style={{ backgroundColor: "#ecfdf5" }}><MapPin className="w-4 h-4" style={{ color: "#10b981" }} /></div>
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#ecfdf5" }}><MapPin className="w-[16px] h-[16px]" style={{ color: "#10b981" }} /></div>
             <div><p className="cnt-detail-label">Ville</p><p className="cnt-detail-value">{contact.city}</p></div>
           </div>
-          <div className="cnt-detail-row">
-            <div className="cnt-detail-icon" style={{ backgroundColor: "#fffbeb" }}><ShoppingBag className="w-4 h-4" style={{ color: "#f59e0b" }} /></div>
-            <div><p className="cnt-detail-label">Commandes</p><p className="cnt-detail-value">{contact.orders} commande{contact.orders > 1 ? "s" : ""}</p></div>
-          </div>
-          <div className="cnt-detail-row">
-            <div className="cnt-detail-icon" style={{ backgroundColor: "#ecfdf5" }}><DollarSign className="w-4 h-4" style={{ color: "#10b981" }} /></div>
-            <div><p className="cnt-detail-label">Total dépensé</p><p className="cnt-detail-value font-bold" style={{ color: "#10b981" }}>{formatFCFA(contact.totalSpent)}</p></div>
-          </div>
-          <div className="cnt-detail-row">
-            <div className="cnt-detail-icon" style={{ backgroundColor: "#f5f3ff" }}><Calendar className="w-4 h-4" style={{ color: "#8b5cf6" }} /></div>
-            <div><p className="cnt-detail-label">Dernière commande</p><p className="cnt-detail-value">{contact.lastOrder ? formatDate(contact.lastOrder) : "Aucune"}</p></div>
-          </div>
+          {contact.email && (
+            <div className="cnt-detail-row">
+              <div className="cnt-detail-icon" style={{ backgroundColor: "#fef3c7" }}><Mail className="w-[16px] h-[16px]" style={{ color: "#d97706" }} /></div>
+              <div><p className="cnt-detail-label">Email</p><p className="cnt-detail-value">{contact.email}</p></div>
+            </div>
+          )}
           {contact.notes && (
             <div className="cnt-detail-row">
-              <div className="cnt-detail-icon" style={{ backgroundColor: "#fef3c7" }}><MessageSquare className="w-4 h-4" style={{ color: "#d97706" }} /></div>
+              <div className="cnt-detail-icon" style={{ backgroundColor: "#f5f3ff" }}><MessageSquare className="w-[16px] h-[16px]" style={{ color: "#8b5cf6" }} /></div>
               <div><p className="cnt-detail-label">Notes</p><p className="cnt-detail-value">{contact.notes}</p></div>
             </div>
           )}
         </div>
+
+        {/* Footer */}
         <div className="cnt-modal-footer">
           <button className="cnt-btn-secondary" onClick={onClose}>Fermer</button>
           <button className="cnt-btn" onClick={() => { onClose(); onEdit(contact); }}><Edit3 className="w-4 h-4" strokeWidth={2.5} />Modifier</button>
@@ -315,33 +409,17 @@ function EditContactModal({
   onSave: (data: ContactFormData, id?: number) => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
-  const [segment, setSegment] = useState<Segment>("Nouveau");
-  const [notes, setNotes] = useState("");
-  const [ready, setReady] = useState(false);
-
-  // Populate on mount
-  useState(() => {
-    if (contact) {
-      setName(contact.name);
-      setPhone(contact.phone);
-      setEmail(contact.email);
-      setCity(contact.city);
-      setSegment(contact.segment);
-      setNotes(contact.notes);
-    }
-    setReady(true);
-  });
+  const [name, setName] = useState(() => contact?.name ?? "");
+  const [phone, setPhone] = useState(() => contact?.phone ?? "");
+  const [email, setEmail] = useState(() => contact?.email ?? "");
+  const [city, setCity] = useState(() => contact?.city ?? "");
+  const [segment, setSegment] = useState<Segment>(() => contact?.segment ?? "Nouveau");
+  const [notes, setNotes] = useState(() => contact?.notes ?? "");
 
   const handleSave = () => {
     if (!name.trim() || !phone.trim()) return;
     onSave({ name: name.trim(), phone: phone.trim(), email: email.trim(), city: city.trim(), segment, notes: notes.trim() }, contact?.id);
   };
-
-  if (!ready) return null;
 
   return (
     <div className="cnt-overlay" onClick={onClose}>
@@ -424,20 +502,37 @@ function DeleteContactModal({ contact, onConfirm, onClose }: { contact: Contact;
   return (
     <div className="cnt-overlay" onClick={onClose}>
       <div className="cnt-modal cnt-modal--sm" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="cnt-modal-header">
           <h3>Supprimer le contact</h3>
           <button className="cnt-modal-close" onClick={onClose}><X className="w-[18px] h-[18px]" /></button>
         </div>
+
+        {/* Body */}
         <div className="cnt-modal-body" style={{ textAlign: "center", padding: "28px 24px" }}>
           <div style={{ width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <AlertTriangle className="w-7 h-7" style={{ color: "#ef4444" }} />
           </div>
-          <p style={{ fontSize: "15px", fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>Êtes-vous sûr ?</p>
+          <p style={{ fontSize: "15px", fontWeight: 600, color: "#111827", margin: "0 0 12px" }}>Êtes-vous sûr ?</p>
+
+          {/* Contact preview card */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", background: "#f9fafb", borderRadius: "10px", border: "1px solid #f3f4f6", marginBottom: "14px" }}>
+            <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${contact.color} flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0`}>
+              {contact.avatar}
+            </div>
+            <div style={{ textAlign: "left", minWidth: 0 }}>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827", margin: 0 }}>{contact.name}</p>
+              <p style={{ fontSize: "11px", color: "#9ca3af", margin: "2px 0 0" }}>{contact.phone}</p>
+            </div>
+          </div>
+
           <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5, margin: "0" }}>
-            Le contact <strong>{contact.name}</strong> sera définitivement supprimé.
-            Cette action est irréversible.
+            Ce contact sera définitivement supprimé avec toutes ses données.
+            <strong>Cette action est irréversible.</strong>
           </p>
         </div>
+
+        {/* Footer */}
         <div className="cnt-modal-footer" style={{ justifyContent: "center" }}>
           <button className="cnt-btn-secondary" onClick={onClose}>Annuler</button>
           <button className="cnt-btn-danger" onClick={onConfirm}><Trash2 className="w-4 h-4" strokeWidth={2} />Supprimer</button>
@@ -538,7 +633,9 @@ export default function ContactsPage() {
      ═══════════════════════════════════════════════════════════ */
 
   return (
-    <div className="space-y-6">
+    <>
+      <style dangerouslySetInnerHTML={{ __html: modalStyles }} />
+      <div className="space-y-6">
       {/* ──────────── Top Bar ──────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -814,7 +911,8 @@ export default function ContactsPage() {
       {modalType === "delete" && selectedContact && (
         <DeleteContactModal contact={selectedContact} onConfirm={handleDelete} onClose={closeModal} />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

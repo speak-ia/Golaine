@@ -331,3 +331,28 @@ Stage Summary:
 - Full interactive chat simulation with AI responses
 - Side panels with agent info, quick scenarios, and test metrics
 - Responsive design for all screen sizes
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Redesign Contact page modals inspired by Commandes page modal style
+
+Work Log:
+- Read ContactsPage.tsx and CommandesPage.tsx to compare modal styles
+- Identified critical bug: `modalStyles` CSS was defined but never injected into DOM
+- Redesigned modal CSS with enhanced classes: `.cnt-hero`, `.cnt-hero-avatar`, `.cnt-stats`, `.cnt-stat-card`
+- View Modal: Added green gradient hero section with larger rounded avatar, name, email, segment badge; added 3-column stats row (commandes, total dépensé, dernière commande) with hover effects; cleaned up detail rows with email/notes conditional display
+- Edit Modal: Fixed `useState` initialization bug — replaced with proper lazy initializer pattern (`useState(() => contact?.name ?? "")`), removed unused `ready` state
+- Delete Modal: Added contact avatar preview card (gradient avatar + name + phone) before warning text
+- Added `<style dangerouslySetInnerHTML={{ __html: modalStyles }} />` to main component render with Fragment wrapper
+- Wrapped return JSX in Fragment (`<>...</>`) to accommodate both style tag and content div
+- Fixed lint errors: removed invalid `useMemo`/`useEffect` for setState, reverted to lazy initializer pattern
+- Zero lint errors after all fixes, dev server compiles cleanly
+
+Stage Summary:
+- File modified: src/components/dashboard/ContactsPage.tsx
+- 3 modals redesigned: View (hero + stats + details), Edit (proper state init), Delete (avatar preview)
+- Critical bug fixed: modal CSS now properly injected into DOM
+- View modal features green gradient hero section with stats cards row
+- Delete modal shows contact preview card with avatar before deletion warning
+- All modals follow Commandes page design language with consistent styling
