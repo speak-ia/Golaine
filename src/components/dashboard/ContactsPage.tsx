@@ -19,30 +19,15 @@ import {
   Calendar,
   DollarSign,
   Users,
+  Eye,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -177,8 +162,296 @@ function generateGradient(): string {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   Custom Modal CSS (inspired by Commandes)
+   ═══════════════════════════════════════════════════════════════ */
+const modalStyles = `
+  .cnt-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    animation: cnt-fadeIn 0.18s ease;
+  }
+  .cnt-modal {
+    background: #ffffff; border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+    width: 100%; max-height: 90vh; overflow-y: auto;
+    animation: cnt-slideUp 0.22s ease;
+  }
+  .cnt-modal--sm { max-width: 440px; }
+  .cnt-modal--md { max-width: 540px; }
+  .cnt-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 16px; border-bottom: 1px solid #f3f4f6;
+  }
+  .cnt-modal-header h3 { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
+  .cnt-modal-close {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: none; background: transparent;
+    cursor: pointer; color: #9ca3af; transition: background 0.12s ease, color 0.12s ease;
+  }
+  .cnt-modal-close:hover { background: #f3f4f6; color: #374151; }
+  .cnt-modal-body { padding: 20px 24px 24px; }
+  .cnt-modal-footer {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 10px; padding: 16px 24px; border-top: 1px solid #f3f4f6;
+  }
+  .cnt-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px; background: #25D366; color: #ffffff;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cnt-btn:hover { background: #16A34A; box-shadow: 0 2px 8px rgba(37,211,102,0.3); }
+  .cnt-btn-danger {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px; background: #ef4444; color: #ffffff;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cnt-btn-danger:hover { background: #dc2626; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+  .cnt-btn-secondary {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; border-radius: 8px; background: #ffffff; color: #374151;
+    font-size: 13px; font-weight: 600; border: 1.5px solid #e5e7eb; cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .cnt-btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
+  .cnt-form-group { margin-bottom: 18px; }
+  .cnt-form-group:last-child { margin-bottom: 0; }
+  .cnt-form-label { display: block; font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .cnt-form-input,
+  .cnt-form-select,
+  .cnt-form-textarea {
+    width: 100%; padding: 10px 14px; font-size: 13.5px; color: #111827;
+    background: #ffffff; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; font-family: inherit;
+  }
+  .cnt-form-input:focus,
+  .cnt-form-select:focus,
+  .cnt-form-textarea:focus { border-color: #25D366; box-shadow: 0 0 0 3px rgba(37,211,102,0.12); }
+  .cnt-form-textarea { resize: vertical; min-height: 70px; }
+  .cnt-detail-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f9fafb; }
+  .cnt-detail-row:last-child { border-bottom: none; }
+  .cnt-detail-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cnt-detail-label { font-size: 11.5px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .cnt-detail-value { font-size: 14px; font-weight: 500; color: #111827; }
+  @keyframes cnt-fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes cnt-slideUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+`;
+
+/* ═══════════════════════════════════════════════════════════════
+   View Modal
+   ═══════════════════════════════════════════════════════════════ */
+function ViewContactModal({ contact, onClose, onEdit }: { contact: Contact; onClose: () => void; onEdit: (c: Contact) => void }) {
+  return (
+    <div className="cnt-overlay" onClick={onClose}>
+      <div className="cnt-modal cnt-modal--md" onClick={(e) => e.stopPropagation()}>
+        <div className="cnt-modal-header">
+          <h3>Détails du contact</h3>
+          <button className="cnt-modal-close" onClick={onClose}><X className="w-[18px] h-[18px]" /></button>
+        </div>
+        <div className="cnt-modal-body">
+          {/* Avatar + Name + Segment */}
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${contact.color} flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0`}>
+              {contact.avatar}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-gray-900 truncate">{contact.name}</p>
+              <p className="text-[12px] text-gray-400">{contact.email || "—"}</p>
+            </div>
+            <Badge className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border ${segmentStyles[contact.segment]}`}>
+              {contact.segment}
+            </Badge>
+          </div>
+          {/* Details */}
+          <div className="cnt-detail-row">
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#eef2ff" }}><Phone className="w-4 h-4" style={{ color: "#6366f1" }} /></div>
+            <div><p className="cnt-detail-label">Téléphone</p><p className="cnt-detail-value">{contact.phone}</p></div>
+          </div>
+          <div className="cnt-detail-row">
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#ecfdf5" }}><MapPin className="w-4 h-4" style={{ color: "#10b981" }} /></div>
+            <div><p className="cnt-detail-label">Ville</p><p className="cnt-detail-value">{contact.city}</p></div>
+          </div>
+          <div className="cnt-detail-row">
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#fffbeb" }}><ShoppingBag className="w-4 h-4" style={{ color: "#f59e0b" }} /></div>
+            <div><p className="cnt-detail-label">Commandes</p><p className="cnt-detail-value">{contact.orders} commande{contact.orders > 1 ? "s" : ""}</p></div>
+          </div>
+          <div className="cnt-detail-row">
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#ecfdf5" }}><DollarSign className="w-4 h-4" style={{ color: "#10b981" }} /></div>
+            <div><p className="cnt-detail-label">Total dépensé</p><p className="cnt-detail-value font-bold" style={{ color: "#10b981" }}>{formatFCFA(contact.totalSpent)}</p></div>
+          </div>
+          <div className="cnt-detail-row">
+            <div className="cnt-detail-icon" style={{ backgroundColor: "#f5f3ff" }}><Calendar className="w-4 h-4" style={{ color: "#8b5cf6" }} /></div>
+            <div><p className="cnt-detail-label">Dernière commande</p><p className="cnt-detail-value">{contact.lastOrder ? formatDate(contact.lastOrder) : "Aucune"}</p></div>
+          </div>
+          {contact.notes && (
+            <div className="cnt-detail-row">
+              <div className="cnt-detail-icon" style={{ backgroundColor: "#fef3c7" }}><MessageSquare className="w-4 h-4" style={{ color: "#d97706" }} /></div>
+              <div><p className="cnt-detail-label">Notes</p><p className="cnt-detail-value">{contact.notes}</p></div>
+            </div>
+          )}
+        </div>
+        <div className="cnt-modal-footer">
+          <button className="cnt-btn-secondary" onClick={onClose}>Fermer</button>
+          <button className="cnt-btn" onClick={() => { onClose(); onEdit(contact); }}><Edit3 className="w-4 h-4" strokeWidth={2.5} />Modifier</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Edit/Add Modal
+   ═══════════════════════════════════════════════════════════════ */
+function EditContactModal({
+  contact, isNew, onSave, onClose,
+}: {
+  contact: Contact | null;
+  isNew: boolean;
+  onSave: (data: ContactFormData, id?: number) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [city, setCity] = useState("");
+  const [segment, setSegment] = useState<Segment>("Nouveau");
+  const [notes, setNotes] = useState("");
+  const [ready, setReady] = useState(false);
+
+  // Populate on mount
+  useState(() => {
+    if (contact) {
+      setName(contact.name);
+      setPhone(contact.phone);
+      setEmail(contact.email);
+      setCity(contact.city);
+      setSegment(contact.segment);
+      setNotes(contact.notes);
+    }
+    setReady(true);
+  });
+
+  const handleSave = () => {
+    if (!name.trim() || !phone.trim()) return;
+    onSave({ name: name.trim(), phone: phone.trim(), email: email.trim(), city: city.trim(), segment, notes: notes.trim() }, contact?.id);
+  };
+
+  if (!ready) return null;
+
+  return (
+    <div className="cnt-overlay" onClick={onClose}>
+      <div className="cnt-modal cnt-modal--md" onClick={(e) => e.stopPropagation()}>
+        <div className="cnt-modal-header">
+          <h3>{isNew ? "Nouveau contact" : `Modifier ${contact?.name}`}</h3>
+          <button className="cnt-modal-close" onClick={onClose}><X className="w-[18px] h-[18px]" /></button>
+        </div>
+        <div className="cnt-modal-body">
+          {/* Avatar preview */}
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${contact?.color || "from-green-400 to-emerald-600"} flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+              {getInitials(name || "NC")}
+            </div>
+            <div><p className="text-sm font-semibold text-gray-900">{name || "Nouveau contact"}</p><p className="text-xs text-gray-400">{segment}</p></div>
+          </div>
+          <div className="cnt-form-group">
+            <label className="cnt-form-label">Nom complet *</label>
+            <input type="text" className="cnt-form-input" placeholder="Ex: Fatou Diallo" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="cnt-form-group">
+              <label className="cnt-form-label">Téléphone *</label>
+              <input type="text" className="cnt-form-input" placeholder="Ex: +221 77 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="cnt-form-group">
+              <label className="cnt-form-label">Email</label>
+              <input type="email" className="cnt-form-input" placeholder="Ex: fatou@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="cnt-form-group">
+              <label className="cnt-form-label">Ville</label>
+              <input type="text" className="cnt-form-input" placeholder="Ex: Dakar" value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+            <div className="cnt-form-group">
+              <label className="cnt-form-label">Segment</label>
+              <select className="cnt-form-select" value={segment} onChange={(e) => setSegment(e.target.value as Segment)}>
+                <option value="VIP">VIP</option>
+                <option value="Régulier">Régulier</option>
+                <option value="Nouveau">Nouveau</option>
+                <option value="Inactif">Inactif</option>
+              </select>
+            </div>
+          </div>
+          <div className="cnt-form-group">
+            <label className="cnt-form-label">Notes</label>
+            <textarea className="cnt-form-textarea" placeholder="Ajoutez des notes sur ce contact..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          </div>
+          {contact && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", padding: "14px 16px", background: "#f9fafb", borderRadius: "10px" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "16px", fontWeight: 700, color: "#111827" }}>{contact.orders}</p>
+                <p style={{ fontSize: "10px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Commandes</p>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "16px", fontWeight: 700, color: "#111827" }}>{formatFCFA(contact.totalSpent)}</p>
+                <p style={{ fontSize: "10px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</p>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{contact.lastOrder ? formatDate(contact.lastOrder) : "—"}</p>
+                <p style={{ fontSize: "10px", color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.05em" }}>Dernière</p>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="cnt-modal-footer">
+          <button className="cnt-btn-secondary" onClick={onClose}>Annuler</button>
+          <button className="cnt-btn" onClick={handleSave} disabled={!name.trim() || !phone.trim()} style={{ opacity: (!name.trim() || !phone.trim()) ? 0.5 : 1 }}><Check className="w-4 h-4" strokeWidth={2.5} />{isNew ? "Ajouter" : "Enregistrer"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Delete Modal
+   ═══════════════════════════════════════════════════════════════ */
+function DeleteContactModal({ contact, onConfirm, onClose }: { contact: Contact; onConfirm: () => void; onClose: () => void }) {
+  return (
+    <div className="cnt-overlay" onClick={onClose}>
+      <div className="cnt-modal cnt-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div className="cnt-modal-header">
+          <h3>Supprimer le contact</h3>
+          <button className="cnt-modal-close" onClick={onClose}><X className="w-[18px] h-[18px]" /></button>
+        </div>
+        <div className="cnt-modal-body" style={{ textAlign: "center", padding: "28px 24px" }}>
+          <div style={{ width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <AlertTriangle className="w-7 h-7" style={{ color: "#ef4444" }} />
+          </div>
+          <p style={{ fontSize: "15px", fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>Êtes-vous sûr ?</p>
+          <p style={{ fontSize: "13px", color: "#6b7280", lineHeight: 1.5, margin: "0" }}>
+            Le contact <strong>{contact.name}</strong> sera définitivement supprimé.
+            Cette action est irréversible.
+          </p>
+        </div>
+        <div className="cnt-modal-footer" style={{ justifyContent: "center" }}>
+          <button className="cnt-btn-secondary" onClick={onClose}>Annuler</button>
+          <button className="cnt-btn-danger" onClick={onConfirm}><Trash2 className="w-4 h-4" strokeWidth={2} />Supprimer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
    ContactsPage Component
    ═══════════════════════════════════════════════════════════════ */
+
+type ModalType = "view" | "edit" | "delete" | null;
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
@@ -188,12 +461,11 @@ export default function ContactsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal state
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [formData, setFormData] = useState<ContactFormData>(emptyForm);
+  const [activeModal, setActiveModal] = useState<{ type: ModalType; contact: Contact | null }>({ type: null, contact: null });
 
-  // Delete state
-  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const openModal = (type: ModalType, contact: Contact) => setActiveModal({ type, contact });
+  const closeModal = () => setActiveModal({ type: null, contact: null });
+  const { type: modalType, contact: selectedContact } = activeModal;
 
   /* ──────────────── Filtering & Pagination ──────────────── */
 
@@ -232,61 +504,23 @@ export default function ContactsPage() {
 
   /* ──────────────── CRUD Operations ──────────────── */
 
-  const handleOpenAdd = () => {
-    setEditingContact(null);
-    setFormData(emptyForm);
-    setIsFormOpen(true);
-  };
+  const handleOpenAdd = () => openModal("edit", { id: 0, name: "", phone: "", email: "", city: "", segment: "Nouveau", orders: 0, totalSpent: 0, lastOrder: "", notes: "", avatar: "NC", color: generateGradient() });
 
-  const handleOpenEdit = (contact: Contact) => {
-    setEditingContact(contact);
-    setFormData({
-      name: contact.name,
-      phone: contact.phone,
-      email: contact.email,
-      city: contact.city,
-      segment: contact.segment,
-      notes: contact.notes,
-    });
-    setIsFormOpen(true);
-  };
-
-  const handleSave = () => {
+  const handleSave = (formData: ContactFormData, existingId?: number) => {
     if (!formData.name.trim() || !formData.phone.trim()) return;
-
-    if (editingContact) {
-      // Update existing
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === editingContact.id
-            ? { ...c, ...formData, avatar: getInitials(formData.name) }
-            : c
-        )
-      );
+    if (existingId) {
+      setContacts((prev) => prev.map((c) => c.id === existingId ? { ...c, ...formData, avatar: getInitials(formData.name) } : c));
     } else {
-      // Add new
-      const newContact: Contact = {
-        id: Math.max(0, ...contacts.map((c) => c.id)) + 1,
-        ...formData,
-        orders: 0,
-        totalSpent: 0,
-        lastOrder: "",
-        avatar: getInitials(formData.name),
-        color: generateGradient(),
-      };
+      const newContact: Contact = { id: Math.max(0, ...contacts.map((c) => c.id)) + 1, ...formData, orders: 0, totalSpent: 0, lastOrder: "", avatar: getInitials(formData.name), color: generateGradient() };
       setContacts((prev) => [newContact, ...prev]);
     }
-    setIsFormOpen(false);
+    closeModal();
   };
 
   const handleDelete = () => {
-    if (!deleteTarget) return;
-    setContacts((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-    setDeleteTarget(null);
-  };
-
-  const updateFormField = (field: keyof ContactFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (!selectedContact) return;
+    setContacts((prev) => prev.filter((c) => c.id !== selectedContact.id));
+    closeModal();
   };
 
   /* ──────────────── Segment Counts ──────────────── */
@@ -428,8 +662,9 @@ export default function ContactsPage() {
             <ContactCard
               key={contact.id}
               contact={contact}
-              onEdit={handleOpenEdit}
-              onDelete={setDeleteTarget}
+              onView={(c) => openModal("view", c)}
+              onEdit={(c) => openModal("edit", c)}
+              onDelete={(c) => openModal("delete", c)}
             />
           ))}
         </div>
@@ -473,8 +708,9 @@ export default function ContactsPage() {
                   <ContactRow
                     key={contact.id}
                     contact={contact}
-                    onEdit={handleOpenEdit}
-                    onDelete={setDeleteTarget}
+                    onView={(c) => openModal("view", c)}
+                    onEdit={(c) => openModal("edit", c)}
+                    onDelete={(c) => openModal("delete", c)}
                   />
                 ))}
               </tbody>
@@ -562,232 +798,22 @@ export default function ContactsPage() {
         </div>
       )}
 
-      {/* ──────────── Add/Edit Modal ──────────── */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-lg rounded-2xl p-6 gap-0 max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="mb-5">
-            <DialogTitle className="text-lg font-bold text-gray-900">
-              {editingContact ? "Modifier le contact" : "Nouveau contact"}
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
-              {editingContact
-                ? "Modifiez les informations du contact ci-dessous."
-                : "Remplissez les informations pour ajouter un nouveau contact."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Avatar preview */}
-            <div className="flex items-center gap-3 mb-2">
-              <div
-                className={`w-12 h-12 rounded-full bg-gradient-to-br ${
-                  editingContact?.color || "from-green-400 to-emerald-600"
-                } flex items-center justify-center text-white font-bold text-sm shadow-sm`}
-              >
-                {getInitials(formData.name || "NC")}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  {formData.name || "Nouveau contact"}
-                </p>
-                <p className="text-xs text-gray-400">{formData.segment}</p>
-              </div>
-            </div>
-
-            {/* Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="contact-name" className="text-sm font-medium text-gray-700">
-                Nom complet <span className="text-red-400">*</span>
-              </Label>
-              <Input
-                id="contact-name"
-                placeholder="Ex: Fatou Diallo"
-                value={formData.name}
-                onChange={(e) => updateFormField("name", e.target.value)}
-                className="rounded-xl h-10"
-              />
-            </div>
-
-            {/* Phone + Email row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-phone" className="text-sm font-medium text-gray-700">
-                  Téléphone <span className="text-red-400">*</span>
-                </Label>
-                <Input
-                  id="contact-phone"
-                  placeholder="Ex: +221 77 123 45 67"
-                  value={formData.phone}
-                  onChange={(e) => updateFormField("phone", e.target.value)}
-                  className="rounded-xl h-10"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-email" className="text-sm font-medium text-gray-700">
-                  Email
-                </Label>
-                <Input
-                  id="contact-email"
-                  type="email"
-                  placeholder="Ex: fatou@email.com"
-                  value={formData.email}
-                  onChange={(e) => updateFormField("email", e.target.value)}
-                  className="rounded-xl h-10"
-                />
-              </div>
-            </div>
-
-            {/* City + Segment row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="contact-city" className="text-sm font-medium text-gray-700">
-                  Ville
-                </Label>
-                <Input
-                  id="contact-city"
-                  placeholder="Ex: Dakar"
-                  value={formData.city}
-                  onChange={(e) => updateFormField("city", e.target.value)}
-                  className="rounded-xl h-10"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium text-gray-700">Segment</Label>
-                <Select
-                  value={formData.segment}
-                  onValueChange={(v) => updateFormField("segment", v)}
-                >
-                  <SelectTrigger className="w-full rounded-xl h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="VIP">VIP</SelectItem>
-                    <SelectItem value="Régulier">Régulier</SelectItem>
-                    <SelectItem value="Nouveau">Nouveau</SelectItem>
-                    <SelectItem value="Inactif">Inactif</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-1.5">
-              <Label htmlFor="contact-notes" className="text-sm font-medium text-gray-700">
-                Notes
-              </Label>
-              <Textarea
-                id="contact-notes"
-                placeholder="Ajoutez des notes sur ce contact..."
-                value={formData.notes}
-                onChange={(e) => updateFormField("notes", e.target.value)}
-                className="rounded-xl min-h-[80px] resize-none"
-              />
-            </div>
-
-            {/* Read-only stats for edit mode */}
-            {editingContact && (
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Statistiques
-                </p>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 mx-auto mb-1">
-                      <ShoppingBag className="w-4 h-4 text-blue-500" />
-                    </div>
-                    <p className="text-lg font-bold text-gray-900">
-                      {editingContact.orders}
-                    </p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-                      Commandes
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 mx-auto mb-1">
-                      <DollarSign className="w-4 h-4 text-green-500" />
-                    </div>
-                    <p className="text-lg font-bold text-gray-900">
-                      {formatFCFA(editingContact.totalSpent)}
-                    </p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-                      Total dépensé
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 mx-auto mb-1">
-                      <Calendar className="w-4 h-4 text-purple-500" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900">
-                      {formatDate(editingContact.lastOrder)}
-                    </p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-                      Dernière commande
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="mt-6 gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsFormOpen(false)}
-              className="rounded-xl px-5 cursor-pointer"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={!formData.name.trim() || !formData.phone.trim()}
-              className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold rounded-xl px-5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {editingContact ? "Enregistrer" : "Ajouter"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ──────────── Delete Confirmation ──────────── */}
-      <AlertDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent className="sm:max-w-md rounded-2xl p-6">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <AlertDialogTitle className="text-lg font-bold text-gray-900">
-                  Supprimer le contact
-                </AlertDialogTitle>
-              </div>
-            </div>
-            <AlertDialogDescription className="text-sm text-gray-500 mt-2">
-              Êtes-vous sûr de vouloir supprimer{" "}
-              <span className="font-semibold text-gray-700">
-                {deleteTarget?.name}
-              </span>{" "}
-              ? Cette action est irréversible et toutes les données associées seront perdues.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 gap-2 sm:gap-0">
-            <AlertDialogCancel className="rounded-xl px-5 cursor-pointer">
-              Annuler
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl px-5 cursor-pointer"
-            >
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* ── Modals (Commandes style) ── */}
+      {modalType === "view" && selectedContact && (
+        <ViewContactModal contact={selectedContact} onClose={closeModal} onEdit={(c) => openModal("edit", c)} />
+      )}
+      {modalType === "edit" && selectedContact && (
+        <EditContactModal
+          key={selectedContact.id}
+          contact={selectedContact.id === 0 ? null : selectedContact}
+          isNew={selectedContact.id === 0}
+          onSave={handleSave}
+          onClose={closeModal}
+        />
+      )}
+      {modalType === "delete" && selectedContact && (
+        <DeleteContactModal contact={selectedContact} onConfirm={handleDelete} onClose={closeModal} />
+      )}
     </div>
   );
 }
@@ -798,17 +824,19 @@ export default function ContactsPage() {
 
 function ContactCard({
   contact,
+  onView,
   onEdit,
   onDelete,
 }: {
   contact: Contact;
+  onView: (c: Contact) => void;
   onEdit: (c: Contact) => void;
   onDelete: (c: Contact) => void;
 }) {
   return (
     <div
       className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-200 group cursor-pointer"
-      onClick={() => onEdit(contact)}
+      onClick={() => onView(contact)}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -868,26 +896,9 @@ function ContactCard({
         </div>
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(contact);
-            }}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-            title="Modifier"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-gray-500" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(contact);
-            }}
-            className="p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-            title="Supprimer"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-          </button>
+          <button onClick={(e) => { e.stopPropagation(); onView(contact); }} className="p-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer" title="Voir"><Eye className="w-3.5 h-3.5 text-blue-500" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onEdit(contact); }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" title="Modifier"><Edit3 className="w-3.5 h-3.5 text-gray-500" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(contact); }} className="p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer" title="Supprimer"><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
         </div>
       </div>
 
@@ -909,10 +920,12 @@ function ContactCard({
 
 function ContactRow({
   contact,
+  onView,
   onEdit,
   onDelete,
 }: {
   contact: Contact;
+  onView: (c: Contact) => void;
   onEdit: (c: Contact) => void;
   onDelete: (c: Contact) => void;
 }) {
@@ -921,7 +934,7 @@ function ContactRow({
       {/* Contact name + avatar */}
       <td className="px-5 py-3.5">
         <button
-          onClick={() => onEdit(contact)}
+          onClick={() => onView(contact)}
           className="flex items-center gap-3 cursor-pointer"
         >
           <div
