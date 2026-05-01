@@ -241,7 +241,7 @@ function ProductForm({
           <SelectTrigger className="w-full h-10">
             <SelectValue placeholder="Choisir une catégorie" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white text-gray-900 border-gray-200">
             {CATEGORIES.filter((c) => c !== "Toutes").map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -637,7 +637,7 @@ export default function MesProduitsPage() {
 
   /* ──────────────────── Render ──────────────────── */
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 text-gray-900">
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -708,7 +708,7 @@ export default function MesProduitsPage() {
           <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
             <SelectValue placeholder="Catégorie" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white text-gray-900 border-gray-200">
             {CATEGORIES.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
@@ -721,7 +721,7 @@ export default function MesProduitsPage() {
           <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white text-gray-900 border-gray-200">
             {STATUS_FILTERS.map((s) => (
               <SelectItem key={s.value} value={s.value}>
                 {s.label}
@@ -801,7 +801,7 @@ export default function MesProduitsPage() {
             size="sm"
             disabled={safeCurrentPage === 1}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40"
+            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           >
             <ChevronLeft className="w-4 h-4" />
             Précédent
@@ -837,7 +837,7 @@ export default function MesProduitsPage() {
             size="sm"
             disabled={safeCurrentPage === totalPages}
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40"
+            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           >
             Suivant
             <ChevronRight className="w-4 h-4" />
@@ -849,7 +849,7 @@ export default function MesProduitsPage() {
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogPortal>
           <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200">
+          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold text-gray-900">
                 Ajouter un produit
@@ -867,7 +867,7 @@ export default function MesProduitsPage() {
                   setAddOpen(false);
                   setFormData(EMPTY_FORM);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
               >
                 Annuler
               </Button>
@@ -888,7 +888,7 @@ export default function MesProduitsPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogPortal>
           <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200">
+          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold text-gray-900">
                 Modifier le produit
@@ -910,7 +910,7 @@ export default function MesProduitsPage() {
                   setEditingProduct(null);
                   setFormData(EMPTY_FORM);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
               >
                 Annuler
               </Button>
@@ -931,7 +931,7 @@ export default function MesProduitsPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogPortal>
           <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200">
+          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
             <DialogHeader>
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -959,7 +959,7 @@ export default function MesProduitsPage() {
                   setDeleteOpen(false);
                   setDeletingProduct(null);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
               >
                 Annuler
               </Button>
