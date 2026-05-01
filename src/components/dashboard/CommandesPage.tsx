@@ -8,6 +8,9 @@ import {
   Package,
   TrendingUp,
   ChevronDown,
+  Eye,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 /* ──────────────────── Types ──────────────────── */
@@ -173,6 +176,29 @@ const styles = `
     opacity: 0.85;
   }
 
+  /* Action button */
+  .cmd-action {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    color: #9ca3af;
+  }
+  .cmd-action:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  .cmd-action--danger:hover {
+    background: #fef2f2;
+    color: #ef4444;
+  }
+
   /* Primary button */
   .cmd-btn {
     display: inline-flex;
@@ -281,6 +307,7 @@ export default function CommandesPage() {
                   <th className="cmd-th text-right">Montant</th>
                   <th className="cmd-th">Statut</th>
                   <th className="cmd-th">Date</th>
+                  <th className="cmd-th text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,6 +344,20 @@ export default function CommandesPage() {
                       {/* Date */}
                       <td className="cmd-td">
                         <span className="text-gray-500 text-[13px]">{order.date}</span>
+                      </td>
+                      {/* Actions */}
+                      <td className="cmd-td text-right">
+                        <div className="flex items-center justify-end gap-0.5">
+                          <button className="cmd-action" title="Voir">
+                            <Eye className="w-[15px] h-[15px]" />
+                          </button>
+                          <button className="cmd-action" title="Modifier">
+                            <Pencil className="w-[14px] h-[14px]" />
+                          </button>
+                          <button className="cmd-action cmd-action--danger" title="Supprimer">
+                            <Trash2 className="w-[14px] h-[14px]" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
