@@ -20,6 +20,7 @@ import {
   Tag,
   Warehouse,
   CircleCheck,
+  Check,
   Bot,
   Smartphone,
 } from "lucide-react";
@@ -96,21 +97,20 @@ function getAgentLabel(agent: AgentIA | undefined): string {
 const EMPTY_FORM: ProductFormData = {
   name: "",
   price: "",
-  category: "Mode",
+  category: "",
   stock: "",
   status: true,
-  image: "/products/robe-wax.png",
+  image: "",
   assignedAgent: "all",
 };
 
-const CATEGORIES = [
-  "Toutes",
+const DEFAULT_CATEGORIES = [
   "Mode",
   "Textile",
   "Alimentation",
   "Beauté",
   "Accessoires",
-] as const;
+];
 
 const STATUS_FILTERS = [
   { value: "tous", label: "Tous" },
@@ -121,21 +121,36 @@ const STATUS_FILTERS = [
 
 const ITEMS_PER_PAGE = 8;
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Mode: "bg-purple-50 text-purple-700",
-  Textile: "bg-amber-50 text-amber-700",
-  Alimentation: "bg-green-50 text-green-700",
-  Beauté: "bg-pink-50 text-pink-700",
-  Accessoires: "bg-sky-50 text-sky-700",
-};
+const COLOR_POOL = [
+  { bg: "bg-purple-50", text: "text-purple-700", accent: "from-purple-500/10 to-transparent" },
+  { bg: "bg-amber-50", text: "text-amber-700", accent: "from-amber-500/10 to-transparent" },
+  { bg: "bg-green-50", text: "text-green-700", accent: "from-green-500/10 to-transparent" },
+  { bg: "bg-pink-50", text: "text-pink-700", accent: "from-pink-500/10 to-transparent" },
+  { bg: "bg-sky-50", text: "text-sky-700", accent: "from-sky-500/10 to-transparent" },
+  { bg: "bg-rose-50", text: "text-rose-700", accent: "from-rose-500/10 to-transparent" },
+  { bg: "bg-indigo-50", text: "text-indigo-700", accent: "from-indigo-500/10 to-transparent" },
+  { bg: "bg-teal-50", text: "text-teal-700", accent: "from-teal-500/10 to-transparent" },
+  { bg: "bg-orange-50", text: "text-orange-700", accent: "from-orange-500/10 to-transparent" },
+  { bg: "bg-cyan-50", text: "text-cyan-700", accent: "from-cyan-500/10 to-transparent" },
+];
 
-const CATEGORY_ACCENT: Record<string, string> = {
-  Mode: "from-purple-500/10 to-transparent",
-  Textile: "from-amber-500/10 to-transparent",
-  Alimentation: "from-green-500/10 to-transparent",
-  Beauté: "from-pink-500/10 to-transparent",
-  Accessoires: "from-sky-500/10 to-transparent",
-};
+function getCategoryColorIndex(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return Math.abs(hash) % COLOR_POOL.length;
+}
+
+function getCategoryBg(name: string): string {
+  return COLOR_POOL[getCategoryColorIndex(name)]?.bg || "bg-gray-50";
+}
+
+function getCategoryText(name: string): string {
+  return COLOR_POOL[getCategoryColorIndex(name)]?.text || "text-gray-700";
+}
+
+function getCategoryAccent(name: string): string {
+  return COLOR_POOL[getCategoryColorIndex(name)]?.accent || "from-gray-100 to-transparent";
+}
 
 /* ──────────────────── Helpers ──────────────────── */
 function formatFCFA(amount: number): string {
@@ -178,13 +193,165 @@ function productToForm(p: Product): ProductFormData {
   };
 }
 
+/* ──────────────────── Category Manager Component ──────────────────── */
+function CategoryManager({
+  categories,
+  onAdd,
+  onRename,
+  onDelete,
+}: {
+  categories: string[];
+  onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onDelete: (name: string) => void;
+}) {
+  const [newCatName, setNewCatName] = useState("");
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  function handleAdd() {
+    const trimmed = newCatName.trim();
+    if (!trimmed) return;
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return;
+    onAdd(trimmed);
+    setNewCatName("");
+  }
+
+  function handleStartEdit(name: string) {
+    setEditingCat(name);
+    setEditValue(name);
+  }
+
+  function handleSaveEdit() {
+    const trimmed = editValue.trim();
+    if (!trimmed || !editingCat) return;
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase() && c !== editingCat)) return;
+    onRename(editingCat, trimmed);
+    setEditingCat(null);
+    setEditValue("");
+  }
+
+  function handleConfirmDelete(name: string) {
+    onDelete(name);
+    setDeleteConfirm(null);
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Add new category */}
+      <div className="flex items-center gap-2">
+        <Input
+          value={newCatName}
+          onChange={(e) => setNewCatName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          placeholder="Nouvelle catégorie..."
+          className="h-9 text-sm"
+        />
+        <Button
+          onClick={handleAdd}
+          disabled={!newCatName.trim()}
+          size="sm"
+          className="h-9 bg-[#25D366] hover:bg-[#16A34A] text-white font-medium cursor-pointer gap-1.5 px-3"
+        >
+          <Plus className="w-4 h-4" />
+          Ajouter
+        </Button>
+      </div>
+
+      {/* Category list */}
+      <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
+        {categories.map((cat) => (
+          <div
+            key={cat}
+            className="group flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <span className={`inline-flex w-3 h-3 rounded-full ${getCategoryBg(cat)}`} />
+            {editingCat === cat ? (
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveEdit();
+                  if (e.key === "Escape") { setEditingCat(null); setEditValue(""); }
+                }}
+                autoFocus
+                className="h-7 text-sm flex-1"
+              />
+            ) : (
+              <span className="flex-1 text-sm font-medium text-gray-800">{cat}</span>
+            )}
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              {editingCat === cat ? (
+                <>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-emerald-50 transition-colors cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  </button>
+                  <button
+                    onClick={() => { setEditingCat(null); setEditValue(""); }}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                </>
+              ) : deleteConfirm === cat ? (
+                <>
+                  <span className="text-[11px] text-red-500 font-medium mr-1">Supprimer ?</span>
+                  <button
+                    onClick={() => handleConfirmDelete(cat)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5 text-red-500" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleStartEdit(cat)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3 h-3 text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(cat)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+        {categories.length === 0 && (
+          <div className="text-center py-8 text-gray-400">
+            <Tag className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            <p className="text-xs">Aucune catégorie</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────── Product Form ──────────────────── */
 function ProductForm({
   form,
   setForm,
+  categories,
 }: {
   form: ProductFormData;
   setForm: React.Dispatch<React.SetStateAction<ProductFormData>>;
+  categories: string[];
 }) {
   return (
     <div className="space-y-4">
@@ -349,7 +516,7 @@ function ProductForm({
             <SelectValue placeholder="Choisir une catégorie" />
           </SelectTrigger>
           <SelectContent className="bg-white text-gray-900 border-gray-200">
-            {CATEGORIES.filter((c) => c !== "Toutes").map((cat) => (
+            {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>
@@ -420,7 +587,7 @@ function ProductCard({
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
-  const gradient = CATEGORY_ACCENT[product.category] || "from-gray-100 to-transparent";
+  const gradient = getCategoryAccent(product.category);
 
   return (
     <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col">
@@ -521,9 +688,7 @@ function ProductCard({
 
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
           <span
-            className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${
-              CATEGORY_COLORS[product.category] || "bg-gray-50 text-gray-700"
-            }`}
+            className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${getCategoryBg(product.category)} ${getCategoryText(product.category)}`}
           >
             {product.category}
           </span>
@@ -566,9 +731,7 @@ function ProductRow({
         <h3 className="font-semibold text-gray-900 text-sm truncate">{product.name}</h3>
         <div className="flex items-center gap-2 mt-1">
           <span
-            className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${
-              CATEGORY_COLORS[product.category] || "bg-gray-50 text-gray-700"
-            }`}
+            className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${getCategoryBg(product.category)} ${getCategoryText(product.category)}`}
           >
             {product.category}
           </span>
@@ -637,6 +800,8 @@ function ProductRow({
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function MesProduitsPage() {
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [catModalOpen, setCatModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const [products, setProducts] = useState<Product[]>([
@@ -780,6 +945,25 @@ export default function MesProduitsPage() {
     setDeletingProduct(null);
   }
 
+  /* ── Category CRUD ── */
+  function handleAddCategory(name: string) {
+    setCategories((prev) => [...prev, name]);
+  }
+
+  function handleRenameCategory(oldName: string, newName: string) {
+    setCategories((prev) => prev.map((c) => (c === oldName ? newName : c)));
+    setProducts((prev) => prev.map((p) => (p.category === oldName ? { ...p, category: newName } : p)));
+    if (categoryFilter === oldName) setCategoryFilter(newName);
+    if (formData.category === oldName) setFormData((prev) => ({ ...prev, category: newName }));
+  }
+
+  function handleDeleteCategory(name: string) {
+    setCategories((prev) => prev.filter((c) => c !== name));
+    setProducts((prev) => prev.map((p) => (p.category === name ? { ...p, category: categories[0] || "" } : p)));
+    if (categoryFilter === name) setCategoryFilter("Toutes");
+    if (formData.category === name) setFormData((prev) => ({ ...prev, category: categories[0] || "" }));
+  }
+
   function handleCategoryChange(val: string) {
     setCategoryFilter(val);
     setCurrentPage(1);
@@ -827,13 +1011,26 @@ export default function MesProduitsPage() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={handleOpenAdd}
-          className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2 shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Ajouter un produit
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setCatModalOpen(true)}
+            variant="outline"
+            className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium cursor-pointer gap-2 border-gray-200"
+          >
+            <Tag className="w-4 h-4" />
+            Catégories
+            <span className="inline-flex w-5 h-5 rounded-full bg-gray-100 text-gray-600 items-center justify-center text-[11px] font-bold">
+              {categories.length}
+            </span>
+          </Button>
+          <Button
+            onClick={handleOpenAdd}
+            className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2 shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Ajouter un produit
+          </Button>
+        </div>
       </div>
 
       {/* ── Stats Row ── */}
@@ -885,7 +1082,7 @@ export default function MesProduitsPage() {
             <SelectValue placeholder="Catégorie" />
           </SelectTrigger>
           <SelectContent className="bg-white text-gray-900 border-gray-200">
-            {CATEGORIES.map((cat) => (
+            {["Toutes", ...categories].map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
               </SelectItem>
@@ -1168,7 +1365,7 @@ export default function MesProduitsPage() {
                 catalogue.
               </DialogDescription>
             </DialogHeader>
-            <ProductForm form={formData} setForm={setFormData} />
+            <ProductForm form={formData} setForm={setFormData} categories={categories} />
             <DialogFooter className="pt-2 gap-2">
               <Button
                 variant="outline"
@@ -1210,7 +1407,7 @@ export default function MesProduitsPage() {
                 .
               </DialogDescription>
             </DialogHeader>
-            <ProductForm form={formData} setForm={setFormData} />
+            <ProductForm form={formData} setForm={setFormData} categories={categories} />
             <DialogFooter className="pt-2 gap-2">
               <Button
                 variant="outline"
