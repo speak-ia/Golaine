@@ -6,7 +6,8 @@ import DashboardPage from "./DashboardPage";
 import { useAuthStore } from "@/lib/store";
 
 export default function DashboardLayout() {
-  const { sidebarOpen } = useAuthStore();
+  // P2: Zustand selector — only re-renders when sidebarOpen changes
+  const sidebarOpen = useAuthStore((s) => s.sidebarOpen);
 
   return (
     <div className="h-screen bg-[#F9FAFB] flex">

@@ -34,8 +34,12 @@ const menuItems: { id: SidebarView; label: string; icon: React.ElementType }[] =
 ];
 
 export default function DashboardSidebar() {
-  const { sidebarView, setSidebarView, sidebarOpen, setSidebarOpen, setPageView } =
-    useAuthStore();
+  // P2: Zustand selectors — only re-renders when these specific values change
+  const sidebarView = useAuthStore((s) => s.sidebarView);
+  const sidebarOpen = useAuthStore((s) => s.sidebarOpen);
+  const setSidebarView = useAuthStore((s) => s.setSidebarView);
+  const setSidebarOpen = useAuthStore((s) => s.setSidebarOpen);
+  const setPageView = useAuthStore((s) => s.setPageView);
 
   return (
     <>

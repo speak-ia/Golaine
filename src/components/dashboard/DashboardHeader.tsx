@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import {
   Bell,
   Search,
@@ -45,7 +45,14 @@ const pageDescriptions: Record<SidebarView, string> = {
 };
 
 export default function DashboardHeader() {
-  const { sidebarView, setSidebarView, setSidebarOpen, setPageView, profilePhoto, setProfilePhoto } = useAuthStore();
+  // P2: Zustand selectors — only re-renders when these values change
+  const sidebarView = useAuthStore((s) => s.sidebarView);
+  const profilePhoto = useAuthStore((s) => s.profilePhoto);
+  const setSidebarView = useAuthStore((s) => s.setSidebarView);
+  const setSidebarOpen = useAuthStore((s) => s.setSidebarOpen);
+  const setPageView = useAuthStore((s) => s.setPageView);
+  const setProfilePhoto = useAuthStore((s) => s.setProfilePhoto);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,13 +73,8 @@ export default function DashboardHeader() {
     e.target.value = "";
   }, [setProfilePhoto]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 18) return "Bonjour";
-    return "Bonsoir";
-  };
-
-  const getDateStr = () => {
+  // P3: Memoize date string — only recalculates when Date minute changes
+  const dateStr = useMemo(() => {
     const d = new Date();
     const days = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
     const months = [
@@ -80,7 +82,7 @@ export default function DashboardHeader() {
       "juillet", "août", "septembre", "octobre", "novembre", "décembre",
     ];
     return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
-  };
+  }, []);
 
   return (
     <>
@@ -116,7 +118,7 @@ export default function DashboardHeader() {
 
             {/* Date */}
             <div className="hidden lg:block text-[11px] text-gray-500 font-medium">
-              {getDateStr()}
+              {dateStr}
             </div>
 
             {/* Search */}
