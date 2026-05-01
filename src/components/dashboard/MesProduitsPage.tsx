@@ -17,6 +17,9 @@ import {
   BarChart3,
   LayoutGrid,
   List,
+  Tag,
+  Warehouse,
+  CircleCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -304,10 +307,12 @@ function StatCard({
 /* ──────────────────── Product Card (Grid View) ──────────────────── */
 function ProductCard({
   product,
+  onView,
   onEdit,
   onDelete,
 }: {
   product: Product;
+  onView: (p: Product) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
@@ -354,6 +359,12 @@ function ProductCard({
         {/* Hover action overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onView(product)}
+              className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-blue-50 transition-colors cursor-pointer"
+            >
+              <Eye className="w-4 h-4 text-blue-600" />
+            </button>
             <button
               onClick={() => onEdit(product)}
               className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
@@ -406,10 +417,12 @@ function ProductCard({
 /* ──────────────────── Product Row (List View) ──────────────────── */
 function ProductRow({
   product,
+  onView,
   onEdit,
   onDelete,
 }: {
   product: Product;
+  onView: (p: Product) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
@@ -457,6 +470,12 @@ function ProductRow({
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          onClick={() => onView(product)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-blue-50 transition-colors cursor-pointer"
+        >
+          <Eye className="w-3.5 h-3.5 text-blue-500" />
+        </button>
+        <button
           onClick={() => onEdit(product)}
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
         >
@@ -498,8 +517,10 @@ export default function MesProduitsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>(EMPTY_FORM);
@@ -542,6 +563,16 @@ export default function MesProduitsPage() {
   }, [filteredProducts, safeCurrentPage]);
 
   /* ── Handlers ── */
+  function handleOpenView(product: Product) {
+    setViewingProduct(product);
+    setViewOpen(true);
+  }
+
+  function handleCloseView() {
+    setViewOpen(false);
+    setViewingProduct(null);
+  }
+
   function handleOpenAdd() {
     setFormData(EMPTY_FORM);
     setAddOpen(true);
@@ -775,6 +806,7 @@ export default function MesProduitsPage() {
             <ProductCard
               key={product.id}
               product={product}
+              onView={handleOpenView}
               onEdit={handleOpenEdit}
               onDelete={handleOpenDelete}
             />
@@ -786,6 +818,7 @@ export default function MesProduitsPage() {
             <ProductRow
               key={product.id}
               product={product}
+              onView={handleOpenView}
               onEdit={handleOpenEdit}
               onDelete={handleOpenDelete}
             />
@@ -844,6 +877,105 @@ export default function MesProduitsPage() {
           </Button>
         </div>
       )}
+
+      {/* ── View Product Modal ── */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogContent className="sm:max-w-lg rounded-2xl p-0 border-gray-200 text-gray-900 overflow-hidden">
+            {viewingProduct && (
+              <>
+                {/* Image header */}
+                <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+                  <img
+                    src={viewingProduct.image}
+                    alt={viewingProduct.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "";
+                      (e.target as HTMLImageElement).classList.add("hidden");
+                    }}
+                  />
+                  {/* Status badge */}
+                  <span
+                    className={`absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
+                      viewingProduct.status === "actif"
+                        ? "bg-emerald-500/90 text-white"
+                        : "bg-gray-500/90 text-white"
+                    }`}
+                  >
+                    <CircleCheck className="w-3.5 h-3.5" />
+                    {viewingProduct.status === "actif" ? "Actif" : "Inactif"}
+                  </span>
+                </div>
+
+                {/* Body */}
+                <div className="p-6">
+                  {/* Name & ID */}
+                  <div className="mb-5">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                      Produit #{viewingProduct.id}
+                    </p>
+                    <h2 className="text-xl font-bold text-gray-900 leading-snug">
+                      {viewingProduct.name}
+                    </h2>
+                  </div>
+
+                  {/* Price */}
+                  <div className="bg-[#E8F8EF] rounded-xl px-4 py-3 mb-5">
+                    <p className="text-[11px] font-semibold text-[#16A34A] uppercase tracking-wider">Prix</p>
+                    <p className="text-2xl font-bold text-[#16A34A] mt-0.5">{formatFCFA(viewingProduct.price)}</p>
+                  </div>
+
+                  {/* Detail grid */}
+                  <div className="space-y-3 mb-5">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                      <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                        <Tag className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Catégorie</p>
+                        <p className="text-sm font-medium text-gray-800">{viewingProduct.category}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Warehouse className={`w-4 h-4 ${viewingProduct.stock === 0 ? "text-red-500" : viewingProduct.stock < 10 ? "text-orange-500" : "text-emerald-600"}`} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Stock</p>
+                        <p className="text-sm font-medium text-gray-800">{viewingProduct.stock === 0 ? "Rupture de stock" : `${viewingProduct.stock} unités disponibles`}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <DialogFooter className="!pt-0 gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleCloseView}
+                      className="flex-1 cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      Fermer
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handleCloseView();
+                        handleOpenEdit(viewingProduct);
+                      }}
+                      className="flex-1 bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Modifier
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
 
       {/* ── Add Product Modal ── */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
