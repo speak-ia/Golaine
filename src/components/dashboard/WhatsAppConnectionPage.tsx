@@ -13,6 +13,8 @@ import {
   Copy,
   RefreshCw,
   Clock,
+  User,
+  ArrowRight,
 } from "lucide-react";
 
 /* ──────────────────── Feature Badge ──────────────────── */
@@ -34,58 +36,138 @@ function FeatureBadge({
 }
 
 /* ──────────────────── QR Code Modal ──────────────────── */
+type ModalStep = "form" | "qr" | "connecting" | "success";
+
 function QRCodeModal({
   onClose,
   onConnected,
   slotName,
+  slotPhone,
 }: {
   onClose: () => void;
   onConnected: () => void;
   slotName: string;
+  slotPhone: string | null;
 }) {
-  const [connecting, setConnecting] = useState(false);
+  const [step, setStep] = useState<ModalStep>("form");
+  const [name, setName] = useState(slotName);
+  const [phone, setPhone] = useState(slotPhone || "");
   const [qrTimer, setQrTimer] = useState("14:59");
 
-  const handleScan = () => {
-    setConnecting(true);
+  const handleShowQR = () => {
+    if (!name.trim() || !phone.trim()) return;
+    setStep("qr");
+  };
+
+  const handleSimulateScan = () => {
+    setStep("connecting");
     setTimeout(() => {
-      setConnecting(false);
-      onConnected();
-    }, 2500);
+      setStep("success");
+      setTimeout(() => {
+        onConnected();
+      }, 1500);
+    }, 2000);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <QrCode className="w-5 h-5 text-[#16A34A]" />
-            <h2 className="text-base font-bold text-gray-900">Scanner le code QR — {slotName}</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5 text-gray-400" />
+        </button>
 
-        {/* Body */}
-        <div className="p-6 flex flex-col items-center">
-          {connecting ? (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <div className="w-16 h-16 rounded-full bg-[#E8F8EF] flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-[#16A34A] animate-pulse" />
-              </div>
-              <p className="text-sm font-semibold text-gray-900">Connexion en cours...</p>
-              <p className="text-xs text-gray-500">Vérification du code QR</p>
+        {/* Step 1: Form */}
+        {step === "form" && (
+          <div className="p-6 sm:p-8">
+            {/* Slot info */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900">{slotName}</h2>
+              {slotPhone && (
+                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" />
+                  {slotPhone}
+                </p>
+              )}
             </div>
-          ) : (
-            <>
-              {/* QR Code */}
-              <div className="relative w-56 h-56 mb-4">
+
+            {/* Instruction */}
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Renseignez le nom et le numéro de téléphone, puis cliquez sur Afficher le QR code.
+            </p>
+
+            {/* Name input */}
+            <div className="mb-4">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <User className="w-4 h-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nom du numéro"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366]/50 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Phone input */}
+            <div className="mb-6">
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                </div>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Numéro de téléphone"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366]/50 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Submit button */}
+            <button
+              onClick={handleShowQR}
+              disabled={!name.trim() || !phone.trim()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Afficher le QR code
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: QR Code */}
+        {step === "qr" && (
+          <div className="p-6 sm:p-8">
+            {/* Back to form */}
+            <button
+              onClick={() => setStep("form")}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
+              Retour
+            </button>
+
+            {/* Slot info */}
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-lg font-bold text-gray-900">{name}</h2>
+              <span className="text-sm text-gray-500">— {phone}</span>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative w-56 h-56">
                 <div className="absolute inset-0 bg-[#25D366]/10 rounded-2xl blur-xl" />
                 <div className="relative w-full h-full bg-white rounded-2xl border-2 border-[#25D366]/20 p-3 flex items-center justify-center">
                   <div className="grid grid-cols-11 gap-0.5 w-full h-full">
@@ -106,56 +188,73 @@ function QRCodeModal({
                     })}
                   </div>
                 </div>
-              </div>
-
-              {/* Timer */}
-              <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Le code QR expire dans {qrTimer}</span>
-                <button className="flex items-center gap-1 text-[#16A34A] font-medium hover:underline cursor-pointer">
-                  <RefreshCw className="w-3 h-3" />
-                  Rafraîchir
-                </button>
-              </div>
-
-              {/* Steps */}
-              <div className="w-full space-y-3">
-                <div className="flex items-start gap-3 text-sm">
-                  <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">
-                    1
-                  </span>
-                  <p className="text-gray-600">Ouvrez WhatsApp sur votre téléphone</p>
-                </div>
-                <div className="flex items-start gap-3 text-sm">
-                  <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">
-                    2
-                  </span>
-                  <p className="text-gray-600">
-                    Allez dans <span className="font-semibold">Paramètres</span> →{" "}
-                    <span className="font-semibold">Appareils associés</span>
-                  </p>
-                </div>
-                <div className="flex items-start gap-3 text-sm">
-                  <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">
-                    3
-                  </span>
-                  <p className="text-gray-600">Scannez ce code QR</p>
+                {/* WhatsApp overlay */}
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-10 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+                  <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
                 </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
 
-        {/* Footer */}
-        {!connecting && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+            {/* Timer + Refresh */}
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mb-5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Le code QR expire dans {qrTimer}</span>
+              <button className="flex items-center gap-1 text-[#16A34A] font-medium hover:underline cursor-pointer">
+                <RefreshCw className="w-3 h-3" />
+                Rafraîchir
+              </button>
+            </div>
+
+            {/* Steps instructions */}
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3 text-sm">
+                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">1</span>
+                <p className="text-gray-600">Ouvrez WhatsApp sur votre téléphone</p>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">2</span>
+                <p className="text-gray-600">Allez dans <span className="font-semibold text-gray-800">Paramètres</span> → <span className="font-semibold text-gray-800">Appareils associés</span></p>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
+                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">3</span>
+                <p className="text-gray-600">Scannez ce code QR</p>
+              </div>
+            </div>
+
+            {/* Simulate button */}
             <button
-              onClick={handleScan}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer"
+              onClick={handleSimulateScan}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer"
             >
-              <QrCode className="w-4 h-4" />
               Simuler la connexion
+              <CheckCircle2 className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* Step 3: Connecting */}
+        {step === "connecting" && (
+          <div className="p-8 sm:p-10 flex flex-col items-center justify-center min-h-[320px]">
+            <div className="w-16 h-16 rounded-full bg-[#E8F8EF] flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-[#16A34A] animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-gray-900">Connexion en cours...</p>
+            <p className="text-sm text-gray-500 mt-1">Vérification du code QR</p>
+          </div>
+        )}
+
+        {/* Step 4: Success */}
+        {step === "success" && (
+          <div className="p-8 sm:p-10 flex flex-col items-center justify-center min-h-[320px]">
+            <div className="w-16 h-16 rounded-full bg-[#E8F8EF] flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-8 h-8 text-[#16A34A]" />
+            </div>
+            <p className="text-base font-semibold text-gray-900">Connecté avec succès !</p>
+            <p className="text-sm text-gray-500 mt-1">{name} est maintenant actif</p>
           </div>
         )}
       </div>
@@ -284,7 +383,7 @@ function NumberSlotCard({
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function WhatsAppConnectionPage() {
-  const [showQR, setShowQR] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState<number | null>(null);
   const [slots, setSlots] = useState<
     Array<{ name: string; phone: string | null; status: SlotStatus }>
   >([
@@ -295,24 +394,21 @@ export default function WhatsAppConnectionPage() {
   const [showToast, setShowToast] = useState<string | null>(null);
 
   const handleConnect = (index: number) => {
-    setShowQR(slots[index].name);
+    setShowQR(index);
   };
 
   const handleConnected = () => {
-    if (showQR) {
-      const index = slots.findIndex((s) => s.name === showQR);
-      if (index >= 0) {
-        setSlots((prev) => {
-          const next = [...prev];
-          next[index] = {
-            ...next[index],
-            status: "connected",
-            phone: index === 1 ? "+221 77 123 45 67" : next[index].phone,
-          };
-          return next;
-        });
-        setShowToast(`${showQR} connecté avec succès !`);
-      }
+    if (showQR !== null) {
+      setSlots((prev) => {
+        const next = [...prev];
+        next[showQR] = {
+          ...next[showQR],
+          status: "connected",
+          phone: showQR === 1 ? "+221 77 123 45 67" : next[showQR].phone,
+        };
+        return next;
+      });
+      setShowToast(`${slots[showQR].name} connecté avec succès !`);
     }
     setShowQR(null);
     setTimeout(() => setShowToast(null), 3000);
@@ -348,9 +444,10 @@ export default function WhatsAppConnectionPage() {
       )}
 
       {/* QR Modal */}
-      {showQR && (
+      {showQR !== null && (
         <QRCodeModal
-          slotName={showQR}
+          slotName={slots[showQR].name}
+          slotPhone={slots[showQR].phone}
           onClose={() => setShowQR(null)}
           onConnected={handleConnected}
         />
