@@ -492,8 +492,24 @@ function EntrepriseTab() {
         {/* Logo upload */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Logo de l&apos;entreprise</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="logo-upload-input"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (!file.type.startsWith("image/")) return;
+              if (file.size > 2 * 1024 * 1024) return; // 2 Mo max
+              setLogoUploaded(true);
+              setFeedback({ type: "success", msg: "Logo téléchargé avec succès !" });
+              e.target.value = "";
+            }}
+          />
           <button
-            onClick={() => setLogoUploaded(true)}
+            type="button"
+            onClick={() => document.getElementById("logo-upload-input")?.click()}
             className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
               logoUploaded
                 ? "border-[#25D366] bg-[#E8F8EF]"
@@ -504,6 +520,16 @@ function EntrepriseTab() {
               <>
                 <Check className="w-8 h-8 text-[#25D366]" />
                 <p className="text-sm font-medium text-[#16A34A]">Logo téléchargé avec succès</p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLogoUploaded(false);
+                  }}
+                  className="text-xs text-gray-500 hover:text-red-500 transition-colors cursor-pointer mt-1"
+                >
+                  Changer le logo
+                </button>
               </>
             ) : (
               <>
@@ -932,7 +958,7 @@ function IntegrationsTab() {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-gray-50 rounded-xl">
           <code className="flex-1 text-sm text-gray-700 font-mono select-all">
-            sk-vente-****...****-a1b2
+            sk-golaine-****...****-a1b2
           </code>
           <div className="flex items-center gap-2">
             <button

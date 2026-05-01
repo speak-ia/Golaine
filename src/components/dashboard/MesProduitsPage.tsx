@@ -18,8 +18,6 @@ import {
   LayoutGrid,
   List,
   Tag,
-  Warehouse,
-  CircleCheck,
   Check,
   Bot,
   Smartphone,
@@ -27,7 +25,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -35,9 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogOverlay,
-  DialogPortal,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -46,52 +40,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  useProductStore,
+  MOCK_AGENTS_IA,
+  type Product,
+  type ProductFormData,
+} from "@/lib/store";
 
-/* ──────────────────── Types ──────────────────── */
-interface AgentIA {
-  id: string;
-  slotName: string;     // Nom du numéro WhatsApp (ex: "Alou Shop")
-  agentName: string;    // Nom de l'agent IA configuré (ex: "Assistan")
-  phone: string;
-  status: "connected" | "inactive";
-}
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  stock: number;
-  image: string;
-  status: "actif" | "inactif";
-  assignedAgent: string | null; // null = tous les agents IA
-}
-
-interface ProductFormData {
-  name: string;
-  price: string;
-  category: string;
-  stock: string;
-  status: boolean;
-  image: string;
-  assignedAgent: string; // "all" or agent id
-}
-
-// Agents IA issus de la page Agent IA (slots WhatsApp)
-const MOCK_AGENTS_IA: AgentIA[] = [
-  { id: "slot-alou", slotName: "Alou Shop", agentName: "Assistan", phone: "+221 76 028 96 07", status: "connected" },
-  { id: "slot-2", slotName: "Numéro 2", agentName: "", phone: "", status: "inactive" },
-  { id: "slot-3", slotName: "Numéro 3", agentName: "", phone: "", status: "inactive" },
-];
-
-function getAgentIA(id: string | null): AgentIA | undefined {
+/* ──────────────────── Helpers ──────────────────── */
+function getAgentIA(id: string | null) {
   if (!id) return undefined;
   return MOCK_AGENTS_IA.find((a) => a.id === id);
-}
-
-function getAgentLabel(agent: AgentIA | undefined): string {
-  if (!agent) return "Tous les agents IA";
-  return agent.agentName ? `${agent.agentName} (${agent.slotName})` : agent.slotName;
 }
 
 const EMPTY_FORM: ProductFormData = {
@@ -103,14 +62,6 @@ const EMPTY_FORM: ProductFormData = {
   image: "",
   assignedAgent: "all",
 };
-
-const DEFAULT_CATEGORIES = [
-  "Mode",
-  "Textile",
-  "Alimentation",
-  "Beauté",
-  "Accessoires",
-];
 
 const STATUS_FILTERS = [
   { value: "tous", label: "Tous" },
@@ -152,7 +103,6 @@ function getCategoryAccent(name: string): string {
   return COLOR_POOL[getCategoryColorIndex(name)]?.accent || "from-gray-100 to-transparent";
 }
 
-/* ──────────────────── Helpers ──────────────────── */
 function formatFCFA(amount: number): string {
   return amount.toLocaleString("fr-FR") + " FCFA";
 }
@@ -194,17 +144,8 @@ function productToForm(p: Product): ProductFormData {
 }
 
 /* ──────────────────── Category Manager Component ──────────────────── */
-function CategoryManager({
-  categories,
-  onAdd,
-  onRename,
-  onDelete,
-}: {
-  categories: string[];
-  onAdd: (name: string) => void;
-  onRename: (oldName: string, newName: string) => void;
-  onDelete: (name: string) => void;
-}) {
+function CategoryManager() {
+  const { categories, addCategory, renameCategory, deleteCategory } = useProductStore();
   const [newCatName, setNewCatName] = useState("");
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -214,7 +155,7 @@ function CategoryManager({
     const trimmed = newCatName.trim();
     if (!trimmed) return;
     if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) return;
-    onAdd(trimmed);
+    addCategory(trimmed);
     setNewCatName("");
   }
 
@@ -227,19 +168,18 @@ function CategoryManager({
     const trimmed = editValue.trim();
     if (!trimmed || !editingCat) return;
     if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase() && c !== editingCat)) return;
-    onRename(editingCat, trimmed);
+    renameCategory(editingCat, trimmed);
     setEditingCat(null);
     setEditValue("");
   }
 
   function handleConfirmDelete(name: string) {
-    onDelete(name);
+    deleteCategory(name);
     setDeleteConfirm(null);
   }
 
   return (
     <div className="space-y-4">
-      {/* Add new category */}
       <div className="flex items-center gap-2">
         <Input
           value={newCatName}
@@ -259,7 +199,6 @@ function CategoryManager({
         </Button>
       </div>
 
-      {/* Category list */}
       <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
         {categories.map((cat) => (
           <div
@@ -388,7 +327,7 @@ function ProductForm({
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <div className="flex flex-col items-center gap-1 text-white">
                   <Pencil className="w-5 h-5" />
-                  <span className="text-xs font-medium">Changer l'image</span>
+                  <span className="text-xs font-medium">Changer l&apos;image</span>
                 </div>
               </div>
               <button
@@ -593,15 +532,20 @@ function ProductCard({
     <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col">
       {/* Image */}
       <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "";
-            (e.target as HTMLImageElement).classList.add("hidden");
-          }}
-        />
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-10 h-10 text-gray-300" />
+          </div>
+        )}
         {/* Overlay badges */}
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span
@@ -719,11 +663,20 @@ function ProductRow({
     <div className="group bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 flex items-center gap-4">
       {/* Image */}
       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-50">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover"
-        />
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-5 h-5 text-gray-300" />
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -800,24 +753,9 @@ function ProductRow({
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function MesProduitsPage() {
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const { products, categories, addProduct, updateProduct, deleteProduct } = useProductStore();
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-  const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "/products/robe-wax.png", status: "actif", assignedAgent: "slot-alou" },
-    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "/products/pagne-tisse.png", status: "actif", assignedAgent: null },
-    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "/products/bissap.png", status: "actif", assignedAgent: "slot-alou" },
-    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "/products/huile-argan.png", status: "actif", assignedAgent: "slot-2" },
-    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "/products/sac-main.png", status: "actif", assignedAgent: null },
-    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "/products/thiakry.png", status: "actif", assignedAgent: "slot-alou" },
-    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "/products/collier.png", status: "inactif", assignedAgent: "slot-3" },
-    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "/products/baobab.png", status: "actif", assignedAgent: null },
-    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "/products/tunique.png", status: "actif", assignedAgent: "slot-alou" },
-    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "/products/savon-noir.png", status: "actif", assignedAgent: "slot-2" },
-    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "/products/bijoux.png", status: "actif", assignedAgent: null },
-    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "/products/cafe-touba.png", status: "actif", assignedAgent: "slot-alou" },
-  ]);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Toutes");
@@ -832,7 +770,6 @@ export default function MesProduitsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<ProductFormData>(EMPTY_FORM);
-  const [nextId, setNextId] = useState(13);
 
   /* ── Stats ── */
   const stats = useMemo(() => {
@@ -863,12 +800,12 @@ export default function MesProduitsPage() {
   }, [products, search, categoryFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const effectivePage = Math.min(currentPage, totalPages);
 
   const paginatedProducts = useMemo(() => {
-    const start = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    const start = (effectivePage - 1) * ITEMS_PER_PAGE;
     return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredProducts, safeCurrentPage]);
+  }, [filteredProducts, effectivePage]);
 
   /* ── Handlers ── */
   function handleOpenView(product: Product) {
@@ -889,20 +826,18 @@ export default function MesProduitsPage() {
   function handleSaveAdd() {
     if (!formData.name.trim() || !formData.price || Number(formData.price) <= 0) return;
     if (!formData.category) return;
-    const newProduct: Product = {
-      id: nextId,
+    addProduct({
       name: formData.name.trim(),
       price: Number(formData.price) || 0,
       category: formData.category,
       stock: Number(formData.stock) || 0,
-      image: formData.image || "/products/robe-wax.png",
+      image: formData.image,
       status: formData.status ? "actif" : "inactif",
       assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
-    };
-    setProducts((prev) => [newProduct, ...prev]);
-    setNextId((prev) => prev + 1);
+    });
     setAddOpen(false);
     setFormData(EMPTY_FORM);
+    setCurrentPage(1); // Go to first page to see new product
   }
 
   function handleOpenEdit(product: Product) {
@@ -914,22 +849,15 @@ export default function MesProduitsPage() {
   function handleSaveEdit() {
     if (!editingProduct || !formData.name.trim() || !formData.category) return;
     if (Number(formData.price) <= 0) return;
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === editingProduct.id
-          ? {
-              ...p,
-              name: formData.name.trim(),
-              price: Number(formData.price) || 0,
-              category: formData.category,
-              stock: Number(formData.stock) || 0,
-              image: formData.image || p.image,
-              status: formData.status ? "actif" : "inactif",
-              assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
-            }
-          : p
-      )
-    );
+    updateProduct(editingProduct.id, {
+      name: formData.name.trim(),
+      price: Number(formData.price) || 0,
+      category: formData.category,
+      stock: Number(formData.stock) || 0,
+      image: formData.image || editingProduct.image,
+      status: formData.status ? "actif" : "inactif",
+      assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
+    });
     setEditOpen(false);
     setEditingProduct(null);
     setFormData(EMPTY_FORM);
@@ -942,31 +870,15 @@ export default function MesProduitsPage() {
 
   function handleConfirmDelete() {
     if (!deletingProduct) return;
-    setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+    deleteProduct(deletingProduct.id);
     setDeleteOpen(false);
     setDeletingProduct(null);
-  }
-
-  /* ── Category CRUD ── */
-  function handleAddCategory(name: string) {
-    setCategories((prev) => [...prev, name]);
-  }
-
-  function handleRenameCategory(oldName: string, newName: string) {
-    setCategories((prev) => prev.map((c) => (c === oldName ? newName : c)));
-    setProducts((prev) => prev.map((p) => (p.category === oldName ? { ...p, category: newName } : p)));
-    if (categoryFilter === oldName) setCategoryFilter(newName);
-    if (formData.category === oldName) setFormData((prev) => ({ ...prev, category: newName }));
-  }
-
-  function handleDeleteCategory(name: string) {
-    // Compute fallback before mutating (avoid stale closure)
-    const remaining = categories.filter((c) => c !== name);
-    const fallback = remaining[0] || "";
-    setCategories(remaining);
-    setProducts((prev) => prev.map((p) => (p.category === name ? { ...p, category: fallback } : p)));
-    if (categoryFilter === name) setCategoryFilter("Toutes");
-    if (formData.category === name) setFormData((prev) => ({ ...prev, category: fallback }));
+    // FIX: If deleting caused current page to become empty, go to previous page
+    const newFilteredLength = products.filter((p) => p.id !== deletingProduct.id).length;
+    const newTotalPages = Math.max(1, Math.ceil(newFilteredLength / ITEMS_PER_PAGE));
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
   }
 
   function handleCategoryChange(val: string) {
@@ -990,11 +902,11 @@ export default function MesProduitsPage() {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-      if (safeCurrentPage > 3) pages.push("ellipsis");
-      const start = Math.max(2, safeCurrentPage - 1);
-      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+      if (effectivePage > 3) pages.push("ellipsis");
+      const start = Math.max(2, effectivePage - 1);
+      const end = Math.min(totalPages - 1, effectivePage + 1);
       for (let i = start; i <= end; i++) pages.push(i);
-      if (safeCurrentPage < totalPages - 2) pages.push("ellipsis");
+      if (effectivePage < totalPages - 2) pages.push("ellipsis");
       pages.push(totalPages);
     }
     return pages;
@@ -1040,34 +952,10 @@ export default function MesProduitsPage() {
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={Package}
-          label="Total produits"
-          value={stats.totalProducts}
-          color="#8B5CF6"
-          bg="#F3F0FF"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Produits actifs"
-          value={stats.activeProducts}
-          color="#16A34A"
-          bg="#E8F8EF"
-        />
-        <StatCard
-          icon={AlertTriangle}
-          label="Stock faible"
-          value={stats.lowStock}
-          color="#F97316"
-          bg="#FFF7ED"
-        />
-        <StatCard
-          icon={BarChart3}
-          label="Valeur stock"
-          value={formatFCFA(stats.totalValue)}
-          color="#0EA5E9"
-          bg="#F0F9FF"
-        />
+        <StatCard icon={Package} label="Total produits" value={stats.totalProducts} color="#8B5CF6" bg="#F3F0FF" />
+        <StatCard icon={TrendingUp} label="Produits actifs" value={stats.activeProducts} color="#16A34A" bg="#E8F8EF" />
+        <StatCard icon={AlertTriangle} label="Stock faible" value={stats.lowStock} color="#F97316" bg="#FFF7ED" />
+        <StatCard icon={BarChart3} label="Valeur stock" value={formatFCFA(stats.totalValue)} color="#0EA5E9" bg="#F0F9FF" />
       </div>
 
       {/* ── Search & Filters ── */}
@@ -1078,73 +966,69 @@ export default function MesProduitsPage() {
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher un produit..."
-            className="pl-9 h-10 bg-white border-gray-200"
+            className="pl-10 h-10"
           />
         </div>
-
-        <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent className="bg-white text-gray-900 border-gray-200">
-            {["Toutes", ...categories].map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={statusFilter} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent className="bg-white text-gray-900 border-gray-200">
-            {STATUS_FILTERS.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* View toggle */}
-        <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5">
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-md transition-colors cursor-pointer ${
-              viewMode === "grid"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded-md transition-colors cursor-pointer ${
-              viewMode === "list"
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            <List className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-2">
+          <Select value={categoryFilter} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent className="bg-white text-gray-900 border-gray-200">
+              <SelectItem value="Toutes">Toutes catégories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue placeholder="Statut" />
+            </SelectTrigger>
+            <SelectContent className="bg-white text-gray-900 border-gray-200">
+              {STATUS_FILTERS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === "grid" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === "list" ? "bg-white shadow-sm text-gray-900" : "text-gray-400 hover:text-gray-600"}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* ── Results count ── */}
+      <div className="flex items-center justify-between text-sm text-gray-500">
+        <span>{filteredProducts.length} résultat{filteredProducts.length > 1 ? "s" : ""}</span>
+        {totalPages > 1 && (
+          <span>Page {effectivePage} sur {totalPages}</span>
+        )}
+      </div>
+
       {/* ── Product Grid/List ── */}
-      {paginatedProducts.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-16 flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
-            <Package className="w-8 h-8 text-gray-300" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-1">
-            Aucun produit trouvé
-          </h3>
-          <p className="text-sm text-gray-500 max-w-sm">
-            Aucun produit ne correspond à vos critères de recherche. Essayez de
-            modifier vos filtres.
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-16">
+          <Package className="w-12 h-12 mx-auto text-gray-200 mb-3" />
+          <p className="text-gray-500 font-medium">Aucun produit trouvé</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {search || categoryFilter !== "Toutes" || statusFilter !== "tous"
+              ? "Essayez de modifier vos filtres"
+              : "Ajoutez votre premier produit"}
           </p>
         </div>
       ) : viewMode === "grid" ? (
@@ -1175,346 +1059,204 @@ export default function MesProduitsPage() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={safeCurrentPage === 1}
+        <div className="flex items-center justify-center gap-1.5 pt-2">
+          <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            disabled={currentPage <= 1}
+            className="w-9 h-9 rounded-lg flex items-center justify-center border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            <ChevronLeft className="w-4 h-4" />
-            Précédent
-          </Button>
-
-          <div className="flex items-center gap-1">
-            {getPageNumbers().map((page, idx) =>
-              page === "ellipsis" ? (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="w-9 h-9 flex items-center justify-center text-sm text-gray-400"
-                >
-                  …
-                </span>
-              ) : (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors cursor-pointer ${
-                    page === safeCurrentPage
-                      ? "bg-[#25D366] text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              )
-            )}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={safeCurrentPage === totalPages}
+            <ChevronLeft className="w-4 h-4 text-gray-600" />
+          </button>
+          {getPageNumbers().map((page, i) =>
+            page === "ellipsis" ? (
+              <span key={`e-${i}`} className="w-9 h-9 flex items-center justify-center text-gray-400">
+                ...
+              </span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-medium transition-colors cursor-pointer ${
+                  effectivePage === page
+                    ? "bg-[#25D366] text-white"
+                    : "border border-gray-200 hover:bg-gray-50 text-gray-700"
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+          <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            className="h-9 gap-1.5 text-sm cursor-pointer disabled:opacity-40 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            disabled={currentPage >= totalPages}
+            className="w-9 h-9 rounded-lg flex items-center justify-center border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            Suivant
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          </button>
         </div>
       )}
 
-      {/* ── View Product Modal ── */}
+      {/* ═══════════ DIALOGS ═══════════ */}
+
+      {/* Category Manager Modal */}
+      <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
+        <DialogContent className="bg-white text-gray-900 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Gérer les catégories</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Ajoutez, renommez ou supprimez les catégories de votre catalogue.
+            </DialogDescription>
+          </DialogHeader>
+          <CategoryManager />
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Product Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="bg-white text-gray-900 sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Ajouter un produit</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Remplissez les informations du nouveau produit.
+            </DialogDescription>
+          </DialogHeader>
+          <ProductForm form={formData} setForm={setFormData} categories={categories} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setAddOpen(false)}
+              className="text-gray-700 border-gray-200 hover:bg-gray-50 cursor-pointer"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSaveAdd}
+              className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer"
+            >
+              Ajouter
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Product Dialog */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogContent className="sm:max-w-lg rounded-2xl p-0 border-gray-200 text-gray-900 overflow-hidden">
-            <DialogTitle className="sr-only">Détails du produit</DialogTitle>
-            {viewingProduct && (
-              <>
-                {/* Image header */}
-                <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        <DialogContent className="bg-white text-gray-900 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Détails du produit</DialogTitle>
+          </DialogHeader>
+          {viewingProduct && (
+            <div className="space-y-4">
+              {viewingProduct.image ? (
+                <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100">
                   <img
                     src={viewingProduct.image}
                     alt={viewingProduct.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "";
-                      (e.target as HTMLImageElement).classList.add("hidden");
+                      (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
-                  {/* Status badge */}
-                  <span
-                    className={`absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
-                      viewingProduct.status === "actif"
-                        ? "bg-emerald-500/90 text-white"
-                        : "bg-gray-500/90 text-white"
-                    }`}
-                  >
-                    <CircleCheck className="w-3.5 h-3.5" />
+                </div>
+              ) : (
+                <div className="w-full h-48 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <ImageIcon className="w-10 h-10 text-gray-300" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">{viewingProduct.name}</h3>
+                <p className="text-xl font-bold text-[#16A34A] mt-1">{formatFCFA(viewingProduct.price)}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-xs text-gray-500">Catégorie</p>
+                  <p className="text-sm font-semibold text-gray-900">{viewingProduct.category}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-xs text-gray-500">Stock</p>
+                  <p className="text-sm font-semibold text-gray-900">{viewingProduct.stock} unités</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-xs text-gray-500">Statut</p>
+                  <p className={`text-sm font-semibold ${viewingProduct.status === "actif" ? "text-emerald-600" : "text-gray-500"}`}>
                     {viewingProduct.status === "actif" ? "Actif" : "Inactif"}
-                  </span>
+                  </p>
                 </div>
-
-                {/* Body */}
-                <div className="p-6">
-                  {/* Name & ID */}
-                  <div className="mb-5">
-                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                      Produit #{viewingProduct.id}
-                    </p>
-                    <h2 className="text-xl font-bold text-gray-900 leading-snug">
-                      {viewingProduct.name}
-                    </h2>
-                  </div>
-
-                  {/* Price */}
-                  <div className="bg-[#E8F8EF] rounded-xl px-4 py-3 mb-5">
-                    <p className="text-[11px] font-semibold text-[#16A34A] uppercase tracking-wider">Prix</p>
-                    <p className="text-2xl font-bold text-[#16A34A] mt-0.5">{formatFCFA(viewingProduct.price)}</p>
-                  </div>
-
-                  {/* Detail grid */}
-                  <div className="space-y-3 mb-5">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                      <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                        <Tag className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Catégorie</p>
-                        <p className="text-sm font-medium text-gray-800">{viewingProduct.category}</p>
-                      </div>
-                    </div>
-
-                    {/* Agent IA assigné */}
-                    {(() => {
-                      const agent = getAgentIA(viewingProduct.assignedAgent);
-                      return (
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${agent?.status === "connected" ? "bg-emerald-50" : "bg-gray-100"}`}>
-                            <Bot className={`w-4 h-4 ${agent?.status === "connected" ? "text-emerald-600" : "text-gray-400"}`} />
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Agent IA assigné</p>
-                            <div className="flex items-center gap-1.5">
-                              {agent ? (
-                                <>
-                                  {agent.agentName && (
-                                    <p className="text-sm font-medium text-gray-800">{agent.agentName}</p>
-                                  )}
-                                  <p className="text-sm text-gray-500">{agent.agentName ? `(${agent.slotName})` : agent.slotName}</p>
-                                  <span className={`ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${agent.status === "connected" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${agent.status === "connected" ? "bg-emerald-500" : "bg-gray-300"}`} />
-                                    {agent.status === "connected" ? "Actif" : "Inactif"}
-                                  </span>
-                                </>
-                              ) : (
-                                <p className="text-sm font-medium text-gray-800">Tous les agents IA</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <Warehouse className={`w-4 h-4 ${viewingProduct.stock === 0 ? "text-red-500" : viewingProduct.stock < 10 ? "text-orange-500" : "text-emerald-600"}`} />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Stock</p>
-                        <p className="text-sm font-medium text-gray-800">{viewingProduct.stock === 0 ? "Rupture de stock" : `${viewingProduct.stock} unités disponibles`}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <DialogFooter className="!pt-0 gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleCloseView}
-                      className="flex-1 cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                    >
-                      Fermer
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleCloseView();
-                        handleOpenEdit(viewingProduct);
-                      }}
-                      className="flex-1 bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2"
-                    >
-                      <Pencil className="w-4 h-4" />
-                      Modifier
-                    </Button>
-                  </DialogFooter>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-xs text-gray-500">Agent IA</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {viewingProduct.assignedAgent
+                      ? (() => {
+                          const agent = getAgentIA(viewingProduct.assignedAgent);
+                          return agent?.agentName || agent?.slotName || "Agent IA";
+                        })()
+                      : "Tous les agents"}
+                  </p>
                 </div>
-              </>
-            )}
-          </DialogContent>
-        </DialogPortal>
+              </div>
+            </div>
+          )}
+        </DialogContent>
       </Dialog>
 
-      {/* ── Add Product Modal ── */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-gray-900">
-                Ajouter un produit
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500">
-                Remplissez les informations du nouveau produit à ajouter à votre
-                catalogue.
-              </DialogDescription>
-            </DialogHeader>
-            <ProductForm form={formData} setForm={setFormData} categories={categories} />
-            <DialogFooter className="pt-2 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAddOpen(false);
-                  setFormData(EMPTY_FORM);
-                }}
-                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={handleSaveAdd}
-                disabled={!formData.name.trim() || !formData.price}
-                className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                Ajouter
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </DialogPortal>
-      </Dialog>
-
-      {/* ── Edit Product Modal ── */}
+      {/* Edit Product Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-gray-900">
-                Modifier le produit
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500">
-                Modifiez les informations de{" "}
-                <span className="font-medium text-gray-700">
-                  {editingProduct?.name}
-                </span>
-                .
-              </DialogDescription>
-            </DialogHeader>
-            <ProductForm form={formData} setForm={setFormData} categories={categories} />
-            <DialogFooter className="pt-2 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditOpen(false);
-                  setEditingProduct(null);
-                  setFormData(EMPTY_FORM);
-                }}
-                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={handleSaveEdit}
-                disabled={!formData.name.trim() || !formData.price}
-                className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer"
-              >
-                <Pencil className="w-4 h-4" />
-                Enregistrer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </DialogPortal>
+        <DialogContent className="bg-white text-gray-900 sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Modifier le produit</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Mettez à jour les informations du produit.
+            </DialogDescription>
+          </DialogHeader>
+          <ProductForm form={formData} setForm={setFormData} categories={categories} />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setEditOpen(false); setEditingProduct(null); }}
+              className="text-gray-700 border-gray-200 hover:bg-gray-50 cursor-pointer"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer"
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
 
-      {/* ── Delete Confirmation Modal ── */}
+      {/* Delete Product Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                  <Trash2 className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <DialogTitle className="text-lg font-bold text-gray-900">
-                    Supprimer le produit
-                  </DialogTitle>
-                </div>
-              </div>
-              <DialogDescription className="text-sm text-gray-600 !mt-2">
-                Êtes-vous sûr de vouloir supprimer{" "}
-                <span className="font-semibold text-gray-800">
-                  {deletingProduct?.name}
-                </span>{" "}
-                ? Cette action est irréversible et le produit sera définitivement
-                retiré de votre catalogue.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="pt-4 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDeleteOpen(false);
-                  setDeletingProduct(null);
-                }}
-                className="cursor-pointer bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={handleConfirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold cursor-pointer"
-              >
-                <Trash2 className="w-4 h-4" />
-                Supprimer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </DialogPortal>
-      </Dialog>
-
-      {/* ── Category Management Modal ── */}
-      <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
-        <DialogPortal>
-          <DialogOverlay />
-          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
-            <DialogHeader>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 rounded-xl bg-[#E8F8EF] flex items-center justify-center flex-shrink-0">
-                  <Tag className="w-5 h-5 text-[#16A34A]" />
-                </div>
-                <div>
-                  <DialogTitle className="text-lg font-bold text-gray-900">
-                    Gérer les catégories
-                  </DialogTitle>
-                </div>
-              </div>
-              <DialogDescription className="text-sm text-gray-500 !mt-2">
-                Ajoutez, renommez ou supprimez les catégories de produits.
-                Les produits d'une catégorie supprimée seront déplacés vers la première catégorie disponible.
-              </DialogDescription>
-            </DialogHeader>
-            <CategoryManager
-              categories={categories}
-              onAdd={handleAddCategory}
-              onRename={handleRenameCategory}
-              onDelete={handleDeleteCategory}
-            />
-          </DialogContent>
-        </DialogPortal>
+        <DialogContent className="bg-white text-gray-900 sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Supprimer le produit</DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          {deletingProduct && (
+            <p className="text-sm text-gray-700 font-medium">
+              « {deletingProduct.name} » — {formatFCFA(deletingProduct.price)}
+            </p>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setDeleteOpen(false); setDeletingProduct(null); }}
+              className="text-gray-700 border-gray-200 hover:bg-gray-50 cursor-pointer"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold cursor-pointer"
+            >
+              Supprimer
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
