@@ -188,29 +188,63 @@ function ProductForm({
 }) {
   return (
     <div className="space-y-4">
-      {/* Image preview */}
+      {/* Image upload */}
       <div className="space-y-2">
         <Label className="text-gray-700">Image du produit</Label>
-        <div className="relative w-full h-40 rounded-xl bg-gray-50 border border-dashed border-gray-200 overflow-hidden flex items-center justify-center">
+        <input
+          type="file"
+          accept="image/*"
+          id="prod-image-upload"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) return; // 5MB max
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setForm((prev) => ({ ...prev, image: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
+          }}
+        />
+        <div
+          onClick={() => document.getElementById("prod-image-upload")?.click()}
+          className="relative w-full h-40 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors group"
+        >
           {form.image ? (
-            <img
-              src={form.image}
-              alt="Aperçu"
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={form.image}
+                alt="Aperçu"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="flex flex-col items-center gap-1 text-white">
+                  <Pencil className="w-5 h-5" />
+                  <span className="text-xs font-medium">Changer l'image</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setForm((prev) => ({ ...prev, image: "" }));
+                }}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </>
           ) : (
-            <div className="flex flex-col items-center gap-2 text-gray-400">
-              <ImageIcon className="w-8 h-8" />
-              <span className="text-xs">Aucune image</span>
+            <div className="flex flex-col items-center gap-2 text-gray-400 group-hover:text-emerald-500 transition-colors">
+              <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                <ImageIcon className="w-6 h-6" />
+              </div>
+              <span className="text-xs font-medium">Cliquez pour uploader une image</span>
+              <span className="text-[10px] text-gray-300">PNG, JPG, WebP — Max 5 Mo</span>
             </div>
           )}
         </div>
-        <Input
-          value={form.image}
-          onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-          placeholder="/products/robe-wax.png"
-          className="h-9 text-xs"
-        />
       </div>
 
       {/* Nom */}
