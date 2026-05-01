@@ -45,7 +45,7 @@ function QRCodeModal({
   slotPhone,
 }: {
   onClose: () => void;
-  onConnected: () => void;
+  onConnected: (name: string, phone: string) => void;
   slotName: string;
   slotPhone: string | null;
 }) {
@@ -64,7 +64,7 @@ function QRCodeModal({
     setTimeout(() => {
       setStep("success");
       setTimeout(() => {
-        onConnected();
+        onConnected(name, phone);
       }, 1500);
     }, 2000);
   };
@@ -387,7 +387,7 @@ export default function WhatsAppConnectionPage() {
   const [slots, setSlots] = useState<
     Array<{ name: string; phone: string | null; status: SlotStatus }>
   >([
-    { name: "Alou Shop", phone: "+221 76 028 96 07", status: "connected" },
+    { name: "Alou Shop", phone: "+221760289607", status: "empty" },
     { name: "Numéro 2", phone: null, status: "empty" },
     { name: "Numéro 3", phone: null, status: "locked" },
   ]);
@@ -397,18 +397,20 @@ export default function WhatsAppConnectionPage() {
     setShowQR(index);
   };
 
-  const handleConnected = () => {
+  const handleConnected = (updatedName?: string, updatedPhone?: string) => {
     if (showQR !== null) {
       setSlots((prev) => {
         const next = [...prev];
         next[showQR] = {
           ...next[showQR],
           status: "connected",
-          phone: showQR === 1 ? "+221 77 123 45 67" : next[showQR].phone,
+          name: updatedName || next[showQR].name,
+          phone: updatedPhone || next[showQR].phone,
         };
         return next;
       });
-      setShowToast(`${slots[showQR].name} connecté avec succès !`);
+      const displayName = updatedName || slots[showQR].name;
+      setShowToast(`${displayName} connecté avec succès !`);
     }
     setShowQR(null);
     setTimeout(() => setShowToast(null), 3000);
