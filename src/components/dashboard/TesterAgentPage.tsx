@@ -3,10 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Send,
-  RotateCcw,
-  FlaskConical,
   Bot,
-  Sparkles,
   Wifi,
   BatteryFull,
   Signal,
@@ -67,11 +64,6 @@ const initialMessages: Message[] = [
 
 /* ──────────────────── Helpers ──────────────────── */
 function getTimestamp(): string {
-  const now = new Date();
-  return `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-}
-
-function getCurrentTime(): string {
   const now = new Date();
   return `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 }
@@ -406,7 +398,6 @@ export default function TesterAgentPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [responseIndex, setResponseIndex] = useState(0);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const [currentTime] = useState(getCurrentTime());
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -469,15 +460,6 @@ export default function TesterAgentPage() {
     }, delay);
   };
 
-  /* Reset conversation */
-  const handleReset = () => {
-    setMessages(initialMessages);
-    setInputValue("");
-    setIsTyping(false);
-    setResponseIndex(0);
-    inputRef.current?.focus();
-  };
-
   /* Auto-resize textarea */
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
@@ -506,7 +488,7 @@ export default function TesterAgentPage() {
       {/* ── Page Header ── */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8F8EF] text-[#16A34A] text-xs font-semibold mb-3">
-          <FlaskConical className="w-3.5 h-3.5" />
+          <Bot className="w-3.5 h-3.5" />
           Mode Simulation
         </div>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
@@ -518,60 +500,7 @@ export default function TesterAgentPage() {
       </div>
 
       {/* ── Phone Mockup Container ── */}
-      <div className="flex-1 flex items-center justify-center gap-8 lg:gap-12 py-4">
-        {/* ── Left Info Panel ── */}
-        <div className="hidden xl:flex flex-col gap-4 w-52">
-          {/* Config card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#E8F8EF] flex items-center justify-center">
-                <Bot className="w-4 h-4 text-[#16A34A]" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-800">Agent Sophia</p>
-                <p className="text-[11px] text-gray-400">Alou Shop • Connecté</p>
-              </div>
-            </div>
-            <div className="h-px bg-gray-100" />
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Messages</span>
-                <span className="text-xs font-semibold text-gray-700">{messages.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Statut</span>
-                <span className="flex items-center gap-1.5 text-xs font-medium text-[#16A34A]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
-                  En ligne
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Temps de réponse</span>
-                <span className="text-xs font-semibold text-gray-700">~1.5s</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Reset button */}
-          <button
-            onClick={handleReset}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#25D366] hover:text-[#16A34A] hover:bg-[#E8F8EF] transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Nouvelle conversation
-          </button>
-
-          {/* Tips card */}
-          <div className="bg-[#E8F8EF] rounded-2xl p-4 border border-[#25D366]/15">
-            <p className="text-[11px] text-[#16A34A] font-medium leading-relaxed flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              <span>
-                Envoyez des messages pour tester les réponses de votre agent. Les conversations ici ne sont pas réelles.
-              </span>
-            </p>
-          </div>
-        </div>
-
+      <div className="flex-1 flex items-center justify-center py-4">
         {/* ── Phone Mockup ── */}
         <div className="relative flex-shrink-0">
           <style dangerouslySetInnerHTML={{ __html: phoneFrameStyles }} />
@@ -583,7 +512,7 @@ export default function TesterAgentPage() {
 
               {/* Status Bar */}
               <div className="phone-status-bar">
-                <span>{currentTime}</span>
+                <span>{getTimestamp()}</span>
                 <div className="flex items-center gap-1.5">
                   <Signal className="w-3.5 h-3.5" />
                   <Wifi className="w-3.5 h-3.5" />
@@ -694,89 +623,6 @@ export default function TesterAgentPage() {
           </div>
         </div>
 
-        {/* ── Right Info Panel ── */}
-        <div className="hidden xl:flex flex-col gap-4 w-52">
-          {/* Quick test scenarios */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-            <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#16A34A]" />
-              Scénarios rapides
-            </p>
-            {[
-              { label: "Nouvelle commande", emoji: "🛒", msg: "Je veux passer commande svp" },
-              { label: "Question produit", emoji: "❓", msg: "Quels sont vos prix ?" },
-              { label: "Suivi livraison", emoji: "📦", msg: "Où en est ma livraison ?" },
-              { label: "Négociation", emoji: "💰", msg: "Pouvez-vous faire un prix ?" },
-            ].map((scenario) => (
-              <button
-                key={scenario.label}
-                onClick={() => {
-                  if (isTyping) return;
-                  const userMsg: Message = {
-                    id: `msg-${Date.now()}`,
-                    text: scenario.msg,
-                    sender: "user",
-                    timestamp: getTimestamp(),
-                  };
-                  setMessages((prev) => [...prev, userMsg]);
-                  setIsTyping(true);
-                  const delay = 1200 + Math.random() * 1000;
-                  setTimeout(() => {
-                    const aiResponse = mockAIResponses[responseIndex % mockAIResponses.length];
-                    const agentMsg: Message = {
-                      id: `msg-${Date.now()}-agent`,
-                      text: aiResponse,
-                      sender: "agent",
-                      timestamp: getTimestamp(),
-                      read: true,
-                    };
-                    setMessages((prev) => [...prev, agentMsg]);
-                    setIsTyping(false);
-                    setResponseIndex((prev) => prev + 1);
-                  }, delay);
-                }}
-                disabled={isTyping}
-                className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left text-xs text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="text-base">{scenario.emoji}</span>
-                <span>{scenario.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Performance metrics */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
-            <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <FlaskConical className="w-4 h-4 text-[#16A34A]" />
-              Métriques de test
-            </p>
-            <div className="space-y-2.5">
-              {[
-                { label: "Taux de réponse", value: "100%", color: "text-[#16A34A]" },
-                { label: "Temps moyen", value: "1.5s", color: "text-gray-700" },
-                { label: "Qualité estimée", value: "94%", color: "text-[#16A34A]" },
-              ].map((m) => (
-                <div key={m.label} className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{m.label}</span>
-                  <span className={`text-xs font-bold ${m.color}`}>{m.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile reset button */}
-        </div>
-      </div>
-
-      {/* ── Mobile Controls (visible on small screens) ── */}
-      <div className="xl:hidden flex items-center justify-center gap-3 py-4">
-        <button
-          onClick={handleReset}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:border-[#25D366] hover:text-[#16A34A] hover:bg-[#E8F8EF] transition-all cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Nouvelle conversation
-        </button>
       </div>
     </div>
   );
