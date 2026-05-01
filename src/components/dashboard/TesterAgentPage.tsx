@@ -487,16 +487,9 @@ export default function TesterAgentPage() {
     <div className="w-full h-full flex flex-col">
       {/* ── Page Header ── */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8F8EF] text-[#16A34A] text-xs font-semibold mb-3">
-          <Bot className="w-3.5 h-3.5" />
-          Mode Simulation
-        </div>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
           Tester l&apos;agent IA
         </h1>
-        <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-          Simulez une conversation WhatsApp avec votre agent pour évaluer la qualité de ses réponses en temps réel.
-        </p>
       </div>
 
       {/* ── Phone Mockup Container ── */}
@@ -555,7 +548,7 @@ export default function TesterAgentPage() {
                 {/* Encryption notice */}
                 <div className="wa-encryption">
                   <Lock className="w-3 h-3 flex-shrink-0" />
-                  <span>Les messages sont chiffrés de bout en bout. Mode simulation.</span>
+                  <span>Les messages sont chiffrés de bout en bout.</span>
                 </div>
 
                 {/* Date chip */}
