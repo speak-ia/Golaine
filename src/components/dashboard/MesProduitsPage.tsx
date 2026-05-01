@@ -20,6 +20,8 @@ import {
   Tag,
   Warehouse,
   CircleCheck,
+  Bot,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,14 @@ import {
 } from "@/components/ui/select";
 
 /* ──────────────────── Types ──────────────────── */
+interface AgentIA {
+  id: string;
+  slotName: string;     // Nom du numéro WhatsApp (ex: "Alou Shop")
+  agentName: string;    // Nom de l'agent IA configuré (ex: "Assistan")
+  phone: string;
+  status: "connected" | "inactive";
+}
+
 interface Product {
   id: number;
   name: string;
@@ -53,6 +63,7 @@ interface Product {
   stock: number;
   image: string;
   status: "actif" | "inactif";
+  assignedAgent: string | null; // null = tous les agents IA
 }
 
 interface ProductFormData {
@@ -62,6 +73,24 @@ interface ProductFormData {
   stock: string;
   status: boolean;
   image: string;
+  assignedAgent: string; // "all" or agent id
+}
+
+// Agents IA issus de la page Agent IA (slots WhatsApp)
+const MOCK_AGENTS_IA: AgentIA[] = [
+  { id: "slot-alou", slotName: "Alou Shop", agentName: "Assistan", phone: "+221 76 028 96 07", status: "connected" },
+  { id: "slot-2", slotName: "Numéro 2", agentName: "", phone: "", status: "inactive" },
+  { id: "slot-3", slotName: "Numéro 3", agentName: "", phone: "", status: "inactive" },
+];
+
+function getAgentIA(id: string | null): AgentIA | undefined {
+  if (!id) return undefined;
+  return MOCK_AGENTS_IA.find((a) => a.id === id);
+}
+
+function getAgentLabel(agent: AgentIA | undefined): string {
+  if (!agent) return "Tous les agents IA";
+  return agent.agentName ? `${agent.agentName} (${agent.slotName})` : agent.slotName;
 }
 
 const EMPTY_FORM: ProductFormData = {
@@ -71,6 +100,7 @@ const EMPTY_FORM: ProductFormData = {
   stock: "",
   status: true,
   image: "/products/robe-wax.png",
+  assignedAgent: "all",
 };
 
 const CATEGORIES = [
@@ -144,6 +174,7 @@ function productToForm(p: Product): ProductFormData {
     stock: String(p.stock),
     status: p.status === "actif",
     image: p.image,
+    assignedAgent: p.assignedAgent || "all",
   };
 }
 
@@ -230,6 +261,45 @@ function ProductForm({
             className="h-10"
           />
         </div>
+      </div>
+
+      {/* Agent IA assigné */}
+      <div className="space-y-2">
+        <Label className="text-gray-700 flex items-center gap-1.5">
+          <Bot className="w-3.5 h-3.5 text-gray-400" />
+          Agent IA assigné
+        </Label>
+        <Select
+          value={form.assignedAgent}
+          onValueChange={(val) =>
+            setForm((prev) => ({ ...prev, assignedAgent: val }))
+          }
+        >
+          <SelectTrigger className="w-full h-10">
+            <SelectValue placeholder="Choisir un agent IA" />
+          </SelectTrigger>
+          <SelectContent className="bg-white text-gray-900 border-gray-200">
+            <SelectItem value="all">
+              <span className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-gray-400" />
+                Tous les agents IA
+              </span>
+            </SelectItem>
+            {MOCK_AGENTS_IA.map((agent) => (
+              <SelectItem key={agent.id} value={agent.id}>
+                <span className="flex items-center gap-2">
+                  <Bot className={`w-4 h-4 ${agent.status === "connected" ? "text-emerald-500" : "text-gray-400"}`} />
+                  <span className="flex flex-col">
+                    <span className="text-sm font-medium">{agent.agentName || agent.slotName}</span>
+                    {agent.agentName && (
+                      <span className="text-[10px] text-gray-400">{agent.slotName}</span>
+                    )}
+                  </span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Catégorie */}
@@ -395,6 +465,26 @@ function ProductCard({
           </p>
         </div>
 
+        {/* Agent IA assigné */}
+        <div className="flex items-center gap-1.5 mt-2">
+          {product.assignedAgent ? (() => {
+            const agent = getAgentIA(product.assignedAgent);
+            return (
+              <>
+                <Bot className={`w-3.5 h-3.5 ${agent?.status === "connected" ? "text-emerald-500" : "text-gray-400"}`} />
+                <span className="text-[11px] text-gray-500 truncate">
+                  {agent?.agentName || agent?.slotName || "Agent IA"}
+                </span>
+              </>
+            );
+          })() : (
+            <span className="text-[11px] text-gray-400 flex items-center gap-1">
+              <Smartphone className="w-3.5 h-3.5" />
+              Tous les agents IA
+            </span>
+          )}
+        </div>
+
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
           <span
             className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${
@@ -450,6 +540,25 @@ function ProductRow({
           </span>
           {getStockBadge(product.stock)}
         </div>
+        {/* Agent IA assigné */}
+        <div className="flex items-center gap-1.5 mt-1">
+          {product.assignedAgent ? (() => {
+            const agent = getAgentIA(product.assignedAgent);
+            return (
+              <>
+                <Bot className={`w-3 h-3 ${agent?.status === "connected" ? "text-emerald-500" : "text-gray-400"}`} />
+                <span className="text-[11px] text-gray-500 truncate">
+                  {agent?.agentName || agent?.slotName || "Agent IA"}
+                </span>
+              </>
+            );
+          })() : (
+            <span className="text-[11px] text-gray-400 flex items-center gap-1">
+              <Smartphone className="w-3 h-3" />
+              Tous les agents IA
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Price */}
@@ -497,18 +606,18 @@ export default function MesProduitsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "/products/robe-wax.png", status: "actif" },
-    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "/products/pagne-tisse.png", status: "actif" },
-    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "/products/bissap.png", status: "actif" },
-    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "/products/huile-argan.png", status: "actif" },
-    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "/products/sac-main.png", status: "actif" },
-    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "/products/thiakry.png", status: "actif" },
-    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "/products/collier.png", status: "inactif" },
-    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "/products/baobab.png", status: "actif" },
-    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "/products/tunique.png", status: "actif" },
-    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "/products/savon-noir.png", status: "actif" },
-    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "/products/bijoux.png", status: "actif" },
-    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "/products/cafe-touba.png", status: "actif" },
+    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "/products/robe-wax.png", status: "actif", assignedAgent: "slot-alou" },
+    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "/products/pagne-tisse.png", status: "actif", assignedAgent: null },
+    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "/products/bissap.png", status: "actif", assignedAgent: "slot-alou" },
+    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "/products/huile-argan.png", status: "actif", assignedAgent: "slot-2" },
+    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "/products/sac-main.png", status: "actif", assignedAgent: null },
+    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "/products/thiakry.png", status: "actif", assignedAgent: "slot-alou" },
+    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "/products/collier.png", status: "inactif", assignedAgent: "slot-3" },
+    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "/products/baobab.png", status: "actif", assignedAgent: null },
+    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "/products/tunique.png", status: "actif", assignedAgent: "slot-alou" },
+    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "/products/savon-noir.png", status: "actif", assignedAgent: "slot-2" },
+    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "/products/bijoux.png", status: "actif", assignedAgent: null },
+    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "/products/cafe-touba.png", status: "actif", assignedAgent: "slot-alou" },
   ]);
 
   const [search, setSearch] = useState("");
@@ -588,6 +697,7 @@ export default function MesProduitsPage() {
       stock: Number(formData.stock) || 0,
       image: formData.image || "/products/robe-wax.png",
       status: formData.status ? "actif" : "inactif",
+      assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
     };
     setProducts((prev) => [newProduct, ...prev]);
     setNextId((prev) => prev + 1);
@@ -614,6 +724,7 @@ export default function MesProduitsPage() {
               stock: Number(formData.stock) || 0,
               image: formData.image || p.image,
               status: formData.status ? "actif" : "inactif",
+              assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
             }
           : p
       )
@@ -940,8 +1051,39 @@ export default function MesProduitsPage() {
                       </div>
                     </div>
 
+                    {/* Agent IA assigné */}
+                    {(() => {
+                      const agent = getAgentIA(viewingProduct.assignedAgent);
+                      return (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${agent?.status === "connected" ? "bg-emerald-50" : "bg-gray-100"}`}>
+                            <Bot className={`w-4 h-4 ${agent?.status === "connected" ? "text-emerald-600" : "text-gray-400"}`} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Agent IA assigné</p>
+                            <div className="flex items-center gap-1.5">
+                              {agent ? (
+                                <>
+                                  {agent.agentName && (
+                                    <p className="text-sm font-medium text-gray-800">{agent.agentName}</p>
+                                  )}
+                                  <p className="text-sm text-gray-500">{agent.agentName ? `(${agent.slotName})` : agent.slotName}</p>
+                                  <span className={`ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${agent.status === "connected" ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${agent.status === "connected" ? "bg-emerald-500" : "bg-gray-300"}`} />
+                                    {agent.status === "connected" ? "Actif" : "Inactif"}
+                                  </span>
+                                </>
+                              ) : (
+                                <p className="text-sm font-medium text-gray-800">Tous les agents IA</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                         <Warehouse className={`w-4 h-4 ${viewingProduct.stock === 0 ? "text-red-500" : viewingProduct.stock < 10 ? "text-orange-500" : "text-emerald-600"}`} />
                       </div>
                       <div>
