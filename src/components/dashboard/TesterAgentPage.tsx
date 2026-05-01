@@ -10,7 +10,11 @@ import {
   ChevronLeft,
   MoreVertical,
   Video,
+  Phone,
+  Search,
   Smile,
+  Paperclip,
+  Camera,
   Mic,
   Check,
   CheckCheck,
@@ -140,23 +144,22 @@ const phoneFrameStyles = `
   .wa-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 10px 10px;
     background: #202c33;
     color: white;
     flex-shrink: 0;
     z-index: 10;
   }
 
-  /* Chat wallpaper */
+  /* Chat wallpaper with WhatsApp doodle pattern */
   .wa-chat-bg {
     flex: 1;
     overflow-y: auto;
     padding: 8px 12px;
     background-color: #0b141a;
-    background-image:
-      radial-gradient(circle at 20% 30%, rgba(37, 211, 102, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(37, 211, 102, 0.02) 0%, transparent 50%);
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.02)' stroke-width='1'%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3Ccircle cx='10' cy='10' r='6'/%3E%3Ccircle cx='70' cy='10' r='6'/%3E%3Ccircle cx='10' cy='70' r='6'/%3E%3Ccircle cx='70' cy='70' r='6'/%3E%3Cpath d='M20 20h40v40H20z' transform='rotate(45 40 40)'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 80px 80px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -187,12 +190,32 @@ const phoneFrameStyles = `
     background: #005c4b;
     align-self: flex-end;
     border-bottom-right-radius: 2px;
+    position: relative;
+  }
+  .wa-bubble--out::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -6px;
+    width: 10px;
+    height: 14px;
+    background: radial-gradient(circle at top left, transparent 10px, #005c4b 10px);
   }
 
   .wa-bubble--in {
     background: #202c33;
     align-self: flex-start;
     border-bottom-left-radius: 2px;
+    position: relative;
+  }
+  .wa-bubble--in::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -6px;
+    width: 10px;
+    height: 14px;
+    background: radial-gradient(circle at top right, transparent 10px, #202c33 10px);
   }
 
   .wa-bubble-text {
@@ -518,7 +541,7 @@ export default function TesterAgentPage() {
                 <button className="wa-icon-btn !w-8 !h-8">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <div className="w-9 h-9 rounded-full bg-[#00a884] flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#00a884] flex items-center justify-center flex-shrink-0">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -529,12 +552,18 @@ export default function TesterAgentPage() {
                     {isTyping ? "en train d'écrire..." : "en ligne"}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button className="wa-icon-btn !w-8 !h-8">
-                    <Video className="w-5 h-5" />
+                <div className="flex items-center gap-0">
+                  <button className="wa-icon-btn !w-9 !h-9">
+                    <Video className="w-[19px] h-[19px]" />
                   </button>
-                  <button className="wa-icon-btn !w-8 !h-8">
-                    <MoreVertical className="w-5 h-5" />
+                  <button className="wa-icon-btn !w-9 !h-9">
+                    <Phone className="w-[19px] h-[19px]" />
+                  </button>
+                  <button className="wa-icon-btn !w-9 !h-9">
+                    <Search className="w-[19px] h-[19px]" />
+                  </button>
+                  <button className="wa-icon-btn !w-9 !h-9">
+                    <MoreVertical className="w-[19px] h-[19px]" />
                   </button>
                 </div>
               </div>
@@ -588,7 +617,10 @@ export default function TesterAgentPage() {
               {/* Input Bar */}
               <div className="wa-input-bar">
                 <button className="wa-icon-btn">
-                  <Smile className="w-6 h-6" />
+                  <Smile className="w-[22px] h-[22px]" />
+                </button>
+                <button className="wa-icon-btn">
+                  <Paperclip className="w-[22px] h-[22px]" style={{ transform: 'rotate(45deg)' }} />
                 </button>
                 <textarea
                   ref={inputRef}
@@ -600,6 +632,9 @@ export default function TesterAgentPage() {
                   className="wa-input"
                   rows={1}
                 />
+                <button className="wa-icon-btn">
+                  <Camera className="w-[22px] h-[22px]" />
+                </button>
                 <button
                   onClick={handleSend}
                   disabled={!inputValue.trim() || isTyping}
