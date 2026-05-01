@@ -11,6 +11,12 @@ import {
   ChevronRight,
   AlertTriangle,
   X,
+  Eye,
+  ImageIcon,
+  TrendingUp,
+  BarChart3,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +67,7 @@ const EMPTY_FORM: ProductFormData = {
   category: "Mode",
   stock: "",
   status: true,
-  image: "📦",
+  image: "/products/robe-wax.png",
 };
 
 const CATEGORIES = [
@@ -80,7 +86,7 @@ const STATUS_FILTERS = [
   { value: "rupture", label: "Rupture de stock" },
 ] as const;
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 8;
 
 const CATEGORY_COLORS: Record<string, string> = {
   Mode: "bg-purple-50 text-purple-700",
@@ -88,6 +94,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Alimentation: "bg-green-50 text-green-700",
   Beauté: "bg-pink-50 text-pink-700",
   Accessoires: "bg-sky-50 text-sky-700",
+};
+
+const CATEGORY_ACCENT: Record<string, string> = {
+  Mode: "from-purple-500/10 to-transparent",
+  Textile: "from-amber-500/10 to-transparent",
+  Alimentation: "from-green-500/10 to-transparent",
+  Beauté: "from-pink-500/10 to-transparent",
+  Accessoires: "from-sky-500/10 to-transparent",
 };
 
 /* ──────────────────── Helpers ──────────────────── */
@@ -98,7 +112,7 @@ function formatFCFA(amount: number): string {
 function getStockBadge(stock: number) {
   if (stock === 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700">
         <X className="w-3 h-3" />
         Rupture
       </span>
@@ -106,14 +120,14 @@ function getStockBadge(stock: number) {
   }
   if (stock < 10) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700">
         <AlertTriangle className="w-3 h-3" />
         Stock faible
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700">
       En stock
     </span>
   );
@@ -140,6 +154,31 @@ function ProductForm({
 }) {
   return (
     <div className="space-y-4">
+      {/* Image preview */}
+      <div className="space-y-2">
+        <Label className="text-gray-700">Image du produit</Label>
+        <div className="relative w-full h-40 rounded-xl bg-gray-50 border border-dashed border-gray-200 overflow-hidden flex items-center justify-center">
+          {form.image ? (
+            <img
+              src={form.image}
+              alt="Aperçu"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-gray-400">
+              <ImageIcon className="w-8 h-8" />
+              <span className="text-xs">Aucune image</span>
+            </div>
+          )}
+        </div>
+        <Input
+          value={form.image}
+          onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
+          placeholder="/products/robe-wax.png"
+          className="h-9 text-xs"
+        />
+      </div>
+
       {/* Nom */}
       <div className="space-y-2">
         <Label htmlFor="prod-name" className="text-gray-700">
@@ -212,27 +251,6 @@ function ProductForm({
         </Select>
       </div>
 
-      {/* Emoji */}
-      <div className="space-y-2">
-        <Label htmlFor="prod-emoji" className="text-gray-700">
-          Emoji / Icône
-        </Label>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
-            {form.image || "📦"}
-          </div>
-          <Input
-            id="prod-emoji"
-            value={form.image}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, image: e.target.value }))
-            }
-            placeholder="Collez un emoji"
-            className="h-10"
-          />
-        </div>
-      </div>
-
       {/* Statut toggle */}
       <div className="flex items-center justify-between py-1">
         <div>
@@ -253,22 +271,225 @@ function ProductForm({
   );
 }
 
+/* ──────────────────── Stat Card ──────────────────── */
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+  bg,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: bg }}
+      >
+        <Icon className="w-5 h-5" style={{ color }} />
+      </div>
+      <div>
+        <p className="text-xs text-gray-400">{label}</p>
+        <p className="text-lg font-bold text-gray-900">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────── Product Card (Grid View) ──────────────────── */
+function ProductCard({
+  product,
+  onEdit,
+  onDelete,
+}: {
+  product: Product;
+  onEdit: (p: Product) => void;
+  onDelete: (p: Product) => void;
+}) {
+  const gradient = CATEGORY_ACCENT[product.category] || "from-gray-100 to-transparent";
+
+  return (
+    <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col">
+      {/* Image */}
+      <div className={`relative h-52 bg-gradient-to-br ${gradient} overflow-hidden`}>
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "";
+            (e.target as HTMLImageElement).classList.add("hidden");
+          }}
+        />
+        {/* Overlay badges */}
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <span
+            className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-semibold backdrop-blur-sm ${
+              product.status === "actif"
+                ? "bg-emerald-500/90 text-white"
+                : "bg-gray-500/90 text-white"
+            }`}
+          >
+            {product.status === "actif" ? "Actif" : "Inactif"}
+          </span>
+          {product.stock === 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-500/90 text-white backdrop-blur-sm">
+              <X className="w-3 h-3" />
+              Rupture
+            </span>
+          )}
+          {product.stock > 0 && product.stock < 10 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-orange-500/90 text-white backdrop-blur-sm">
+              <AlertTriangle className="w-3 h-3" />
+              Stock faible
+            </span>
+          )}
+        </div>
+
+        {/* Hover action overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEdit(product)}
+              className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <Pencil className="w-4 h-4 text-gray-700" />
+            </button>
+            <button
+              onClick={() => onDelete(product)}
+              className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-gray-900 text-[15px] leading-snug line-clamp-2">
+            {product.name}
+          </h3>
+        </div>
+
+        <div className="mt-1.5">
+          <p className="text-lg font-bold text-[#16A34A]">
+            {formatFCFA(product.price)}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+          <span
+            className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${
+              CATEGORY_COLORS[product.category] || "bg-gray-50 text-gray-700"
+            }`}
+          >
+            {product.category}
+          </span>
+          {product.stock > 0 && (
+            <span className="text-[11px] text-gray-400">
+              {product.stock} en stock
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────── Product Row (List View) ──────────────────── */
+function ProductRow({
+  product,
+  onEdit,
+  onDelete,
+}: {
+  product: Product;
+  onEdit: (p: Product) => void;
+  onDelete: (p: Product) => void;
+}) {
+  return (
+    <div className="group bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 flex items-center gap-4">
+      {/* Image */}
+      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-50">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-gray-900 text-sm truncate">{product.name}</h3>
+        <div className="flex items-center gap-2 mt-1">
+          <span
+            className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              CATEGORY_COLORS[product.category] || "bg-gray-50 text-gray-700"
+            }`}
+          >
+            {product.category}
+          </span>
+          {getStockBadge(product.stock)}
+        </div>
+      </div>
+
+      {/* Price */}
+      <div className="text-right flex-shrink-0">
+        <p className="font-bold text-[#16A34A] text-sm">{formatFCFA(product.price)}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{product.stock} en stock</p>
+      </div>
+
+      {/* Status */}
+      <div className="flex-shrink-0">
+        <span
+          className={`inline-flex w-2 h-2 rounded-full ${
+            product.status === "actif" ? "bg-emerald-500" : "bg-gray-300"
+          }`}
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(product)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <Pencil className="w-3.5 h-3.5 text-gray-500" />
+        </button>
+        <button
+          onClick={() => onDelete(product)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5 text-red-400" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────── Main Component ──────────────────── */
 export default function MesProduitsPage() {
-  /* ── State ── */
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "👗", status: "actif" },
-    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "🧵", status: "actif" },
-    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "🍵", status: "actif" },
-    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "✨", status: "actif" },
-    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "👜", status: "actif" },
-    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "🍚", status: "actif" },
-    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "📿", status: "inactif" },
-    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "🌿", status: "actif" },
-    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "👚", status: "actif" },
-    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "🧼", status: "actif" },
-    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "💎", status: "actif" },
-    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "☕", status: "actif" },
+    { id: 1, name: "Robe Wax S-400", price: 5000, category: "Mode", stock: 25, image: "/products/robe-wax.png", status: "actif" },
+    { id: 2, name: "Pagne Tissé Premium", price: 8000, category: "Textile", stock: 15, image: "/products/pagne-tisse.png", status: "actif" },
+    { id: 3, name: "Bissap 1L", price: 1500, category: "Alimentation", stock: 50, image: "/products/bissap.png", status: "actif" },
+    { id: 4, name: "Huile d'Argan Bio", price: 12000, category: "Beauté", stock: 8, image: "/products/huile-argan.png", status: "actif" },
+    { id: 5, name: "Sac À Main Dakar", price: 6500, category: "Accessoires", stock: 20, image: "/products/sac-main.png", status: "actif" },
+    { id: 6, name: "Thiakry Nature", price: 2000, category: "Alimentation", stock: 35, image: "/products/thiakry.png", status: "actif" },
+    { id: 7, name: "Collier Traditionnel", price: 3500, category: "Accessoires", stock: 12, image: "/products/collier.png", status: "inactif" },
+    { id: 8, name: "Baobab Fruit Powder", price: 4500, category: "Alimentation", stock: 0, image: "/products/baobab.png", status: "actif" },
+    { id: 9, name: "Tunique Boubou", price: 9000, category: "Mode", stock: 18, image: "/products/tunique.png", status: "actif" },
+    { id: 10, name: "Savon Noir Naturel", price: 2500, category: "Beauté", stock: 40, image: "/products/savon-noir.png", status: "actif" },
+    { id: 11, name: "Bijoux Mauritanien", price: 15000, category: "Accessoires", stock: 5, image: "/products/bijoux.png", status: "actif" },
+    { id: 12, name: "Café Touba 500g", price: 3000, category: "Alimentation", stock: 22, image: "/products/cafe-touba.png", status: "actif" },
   ]);
 
   const [search, setSearch] = useState("");
@@ -276,7 +497,6 @@ export default function MesProduitsPage() {
   const [statusFilter, setStatusFilter] = useState("tous");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modal states
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -285,10 +505,19 @@ export default function MesProduitsPage() {
   const [formData, setFormData] = useState<ProductFormData>(EMPTY_FORM);
   const [nextId, setNextId] = useState(13);
 
+  /* ── Stats ── */
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const activeProducts = products.filter((p) => p.status === "actif").length;
+    const lowStock = products.filter((p) => p.stock > 0 && p.stock < 10).length;
+    const outOfStock = products.filter((p) => p.stock === 0).length;
+    const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
+    return { totalProducts, activeProducts, lowStock, outOfStock, totalValue };
+  }, [products]);
+
   /* ── Filtered & Paginated ── */
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      // Search
       if (search) {
         const q = search.toLowerCase();
         const matchesSearch =
@@ -296,11 +525,7 @@ export default function MesProduitsPage() {
           p.category.toLowerCase().includes(q);
         if (!matchesSearch) return false;
       }
-      // Category
-      if (categoryFilter !== "Toutes" && p.category !== categoryFilter) {
-        return false;
-      }
-      // Status
+      if (categoryFilter !== "Toutes" && p.category !== categoryFilter) return false;
       if (statusFilter === "actif" && p.status !== "actif") return false;
       if (statusFilter === "inactif" && p.status !== "inactif") return false;
       if (statusFilter === "rupture" && p.stock !== 0) return false;
@@ -330,7 +555,7 @@ export default function MesProduitsPage() {
       price: Number(formData.price) || 0,
       category: formData.category,
       stock: Number(formData.stock) || 0,
-      image: formData.image || "📦",
+      image: formData.image || "/products/robe-wax.png",
       status: formData.status ? "actif" : "inactif",
     };
     setProducts((prev) => [newProduct, ...prev]);
@@ -356,7 +581,7 @@ export default function MesProduitsPage() {
               price: Number(formData.price) || 0,
               category: formData.category,
               stock: Number(formData.stock) || 0,
-              image: formData.image || "📦",
+              image: formData.image || p.image,
               status: formData.status ? "actif" : "inactif",
             }
           : p
@@ -379,7 +604,6 @@ export default function MesProduitsPage() {
     setDeletingProduct(null);
   }
 
-  // Reset page when filters change
   function handleCategoryChange(val: string) {
     setCategoryFilter(val);
     setCurrentPage(1);
@@ -395,7 +619,6 @@ export default function MesProduitsPage() {
     setCurrentPage(1);
   }
 
-  /* ── Page number buttons ── */
   function getPageNumbers(): (number | "ellipsis")[] {
     const pages: (number | "ellipsis")[] = [];
     if (totalPages <= 5) {
@@ -414,77 +637,127 @@ export default function MesProduitsPage() {
 
   /* ──────────────────── Render ──────────────────── */
   return (
-    <div className="space-y-6">
-      {/* ── Top Bar ── */}
-      <div className="flex flex-col gap-4">
-        {/* Heading row */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E8F8EF] flex items-center justify-center">
-              <Package className="w-5 h-5 text-[#16A34A]" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Mes Produits</h1>
-              <p className="text-sm text-gray-500">
-                {products.length} produit{products.length > 1 ? "s" : ""} au total
-              </p>
-            </div>
+    <div className="w-full space-y-6">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#E8F8EF] flex items-center justify-center">
+            <Package className="w-5 h-5 text-[#16A34A]" />
           </div>
-          <Button
-            onClick={handleOpenAdd}
-            className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Ajouter un produit
-          </Button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Mes Produits</h1>
+            <p className="text-sm text-gray-500">
+              {stats.totalProducts} produit{stats.totalProducts > 1 ? "s" : ""} au catalogue
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={handleOpenAdd}
+          className="bg-[#25D366] hover:bg-[#16A34A] text-white font-semibold cursor-pointer gap-2 shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Ajouter un produit
+        </Button>
+      </div>
+
+      {/* ── Stats Row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          icon={Package}
+          label="Total produits"
+          value={stats.totalProducts}
+          color="#8B5CF6"
+          bg="#F3F0FF"
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Produits actifs"
+          value={stats.activeProducts}
+          color="#16A34A"
+          bg="#E8F8EF"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          label="Stock faible"
+          value={stats.lowStock}
+          color="#F97316"
+          bg="#FFF7ED"
+        />
+        <StatCard
+          icon={BarChart3}
+          label="Valeur stock"
+          value={formatFCFA(stats.totalValue)}
+          color="#0EA5E9"
+          bg="#F0F9FF"
+        />
+      </div>
+
+      {/* ── Search & Filters ── */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Rechercher un produit..."
+            className="pl-9 h-10 bg-white border-gray-200"
+          />
         </div>
 
-        {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Rechercher un produit..."
-              className="pl-9 h-10 bg-white border-gray-200"
-            />
-          </div>
+        <Select value={categoryFilter} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* Category filter */}
-          <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
-              <SelectValue placeholder="Catégorie" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTERS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {/* Status filter */}
-          <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white border-gray-200">
-              <SelectValue placeholder="Statut" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTERS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* View toggle */}
+        <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-md transition-colors cursor-pointer ${
+              viewMode === "grid"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-md transition-colors cursor-pointer ${
+              viewMode === "list"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <List className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* ── Product Grid ── */}
+      {/* ── Product Grid/List ── */}
       {paginatedProducts.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 flex flex-col items-center justify-center text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 p-16 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-4">
             <Package className="w-8 h-8 text-gray-300" />
           </div>
@@ -496,76 +769,26 @@ export default function MesProduitsPage() {
             modifier vos filtres.
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {paginatedProducts.map((product) => (
-            <div
+            <ProductCard
               key={product.id}
-              className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 flex flex-col"
-            >
-              {/* Top: emoji + status */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center text-3xl">
-                  {product.image}
-                </div>
-                <Badge
-                  className={
-                    product.status === "actif"
-                      ? "bg-emerald-50 text-emerald-700 border-0 font-medium"
-                      : "bg-gray-100 text-gray-500 border-0 font-medium"
-                  }
-                >
-                  {product.status === "actif" ? "Actif" : "Inactif"}
-                </Badge>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 space-y-2">
-                <h3 className="font-semibold text-gray-900 leading-snug">
-                  {product.name}
-                </h3>
-                <p className="text-lg font-bold text-[#16A34A]">
-                  {formatFCFA(product.price)}
-                </p>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      CATEGORY_COLORS[product.category] || "bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    {product.category}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {product.stock} en stock
-                  </span>
-                </div>
-                {product.stock <= 10 && (
-                  <div className="pt-1">{getStockBadge(product.stock)}</div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 pt-4 mt-4 border-t border-gray-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenEdit(product)}
-                  className="flex-1 h-9 text-gray-600 hover:text-[#16A34A] hover:bg-[#E8F8EF] gap-1.5 cursor-pointer"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleOpenDelete(product)}
-                  className="flex-1 h-9 text-gray-600 hover:text-red-600 hover:bg-red-50 gap-1.5 cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Supprimer
-                </Button>
-              </div>
-            </div>
+              product={product}
+              onEdit={handleOpenEdit}
+              onDelete={handleOpenDelete}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {paginatedProducts.map((product) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              onEdit={handleOpenEdit}
+              onDelete={handleOpenDelete}
+            />
           ))}
         </div>
       )}
@@ -573,7 +796,6 @@ export default function MesProduitsPage() {
       {/* ── Pagination ── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          {/* Précédent */}
           <Button
             variant="outline"
             size="sm"
@@ -585,7 +807,6 @@ export default function MesProduitsPage() {
             Précédent
           </Button>
 
-          {/* Page numbers */}
           <div className="flex items-center gap-1">
             {getPageNumbers().map((page, idx) =>
               page === "ellipsis" ? (
@@ -611,7 +832,6 @@ export default function MesProduitsPage() {
             )}
           </div>
 
-          {/* Suivant */}
           <Button
             variant="outline"
             size="sm"
