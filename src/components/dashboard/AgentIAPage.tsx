@@ -3,126 +3,68 @@
 import { useState } from "react";
 import {
   Bot,
-  Power,
-  Save,
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Trash2,
-  Languages,
-  MessageCircle,
-  BookOpen,
-  ShoppingCart,
-  CheckCircle2,
   Sparkles,
+  ChevronDown,
+  Save,
+  CheckCircle2,
   Info,
+  Bell,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 /* ──────────────────── Types ──────────────────── */
-interface FAQEntry {
-  id: string;
-  question: string;
-  answer: string;
-}
+type TabSlot = {
+  name: string;
+  phone: string;
+  status: "connected" | "inactive" | "locked";
+};
+
+type AgentConfig = {
+  agentName: string;
+  instructions: string;
+  notificationNumber: string;
+};
 
 /* ──────────────────── Mock Data ──────────────────── */
-const initialFAQs: FAQEntry[] = [
-  {
-    id: "faq-1",
-    question: "Quels sont vos modes de livraison ?",
-    answer:
-      "Nous livrons à Dakar et dans toute la région de Dakar. La livraison standard prend 24-48h et coûte 1 500 FCFA. La livraison express est disponible le jour même pour 2 500 FCFA.",
-  },
-  {
-    id: "faq-2",
-    question: "Proposez-vous des retours ou échanges ?",
-    answer:
-      "Oui, vous disposez de 7 jours après réception pour demander un échange si l'article ne convient pas. L'article doit être dans son état d'origine. Les retours sont traités sous 48h.",
-  },
-  {
-    id: "faq-3",
-    question: "Comment passer commande sur WhatsApp ?",
-    answer:
-      "C'est très simple ! Envoyez-moi le nom du produit souhaité et la quantité. Je vous enregistrerai la commande et vous enverrai un récapitulatif avec le total. Vous pouvez aussi m'envoyer une photo du produit que vous souhaitez commander.",
-  },
-  {
-    id: "faq-4",
-    question: "Acceptez-vous les paiements à la livraison ?",
-    answer:
-      "Oui, nous acceptons le paiement à la livraison pour les commandes à Dakar. Nous acceptons également Wave, Orange Money et les virements bancaires pour les commandes en province.",
-  },
+const tabs: TabSlot[] = [
+  { name: "Alou Shop", phone: "+221760289607", status: "connected" },
+  { name: "Numéro 2", phone: "", status: "inactive" },
+  { name: "Numéro 3", phone: "", status: "locked" },
 ];
+
+const defaultConfigs: Record<string, AgentConfig> = {
+  "Alou Shop": {
+    agentName: "Assistan",
+    instructions:
+      "Tu es l'assistante de [Nom de l'entreprise].\nTu réponds aux questions sur nos produits et services.\nTu es professionnelle, chaleureuse et concise.",
+    notificationNumber: "",
+  },
+  "Numéro 2": {
+    agentName: "",
+    instructions: "",
+    notificationNumber: "",
+  },
+  "Numéro 3": {
+    agentName: "",
+    instructions: "",
+    notificationNumber: "",
+  },
+};
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function AgentIAPage() {
-  /* Agent Status */
-  const [isActive, setIsActive] = useState(true);
-
-  /* Agent Identity */
-  const [agentName, setAgentName] = useState("Sophia");
-  const [agentDescription, setAgentDescription] = useState(
-    "Sophia est une assistante commerciale chaleureuse et professionnelle. Elle connaît parfaitement vos produits et aide les clients à passer commande facilement."
-  );
-  const [welcomeMessage, setWelcomeMessage] = useState(
-    "Bonjour ! 👋 Je suis Sophia, l'assistante de [Nom de la boutique]. Comment puis-je vous aider aujourd'hui ?"
-  );
-
-  /* Language */
-  const [language, setLanguage] = useState("francais");
-
-  /* Response Style */
-  const [responseStyle, setResponseStyle] = useState("amical");
-
-  /* Auto-Reply */
-  const [autoReply, setAutoReply] = useState(true);
-  const [replyDelay, setReplyDelay] = useState([5]);
-
-  /* FAQ */
-  const [faqs, setFaqs] = useState<FAQEntry[]>(initialFAQs);
-  const [showAddFAQ, setShowAddFAQ] = useState(false);
-  const [newQuestion, setNewQuestion] = useState("");
-  const [newAnswer, setNewAnswer] = useState("");
-
-  /* Save State */
+  const [activeTab, setActiveTab] = useState(0);
+  const [configs, setConfigs] = useState<Record<string, AgentConfig>>(defaultConfigs);
   const [saved, setSaved] = useState(false);
+  const [showAIPrompt, setShowAIPrompt] = useState(false);
 
-  /* Handlers */
-  const handleAddFAQ = () => {
-    if (!newQuestion.trim() || !newAnswer.trim()) return;
-    const entry: FAQEntry = {
-      id: `faq-${Date.now()}`,
-      question: newQuestion.trim(),
-      answer: newAnswer.trim(),
-    };
-    setFaqs((prev) => [...prev, entry]);
-    setNewQuestion("");
-    setNewAnswer("");
-    setShowAddFAQ(false);
-  };
+  const currentTab = tabs[activeTab];
+  const config = configs[currentTab.name];
 
-  const handleRemoveFAQ = (id: string) => {
-    setFaqs((prev) => prev.filter((f) => f.id !== id));
+  const updateConfig = (key: keyof AgentConfig, value: string) => {
+    setConfigs((prev) => ({
+      ...prev,
+      [currentTab.name]: { ...prev[currentTab.name], [key]: value },
+    }));
   };
 
   const handleSave = () => {
@@ -131,429 +73,202 @@ export default function AgentIAPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-3xl">
       {/* ── Page Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#E8F8EF]">
-            <Bot className="w-5 h-5 text-[#16A34A]" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Configuration de l&apos;agent IA
-            </h1>
-            <p className="text-sm text-gray-500">
-              Personnalisez le comportement et les réponses de votre agent
-            </p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#E8F8EF]">
+          <Bot className="w-5 h-5 text-[#16A34A]" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Agent IA</h1>
+          <p className="text-sm text-gray-500">
+            Configurez le comportement et les réponses de votre agent
+          </p>
         </div>
       </div>
 
-      {/* ── Agent Status Card ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                isActive ? "bg-[#25D366] animate-pulse" : "bg-gray-300"
-              }`}
-            />
-            <div>
-              <p className="text-sm font-semibold text-gray-900">
-                Statut de l&apos;agent
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {isActive
-                  ? "Votre agent répond actuellement aux clients"
-                  : "Votre agent est en pause et ne répond pas"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge
-              className={
+      {/* ── Number Tabs ── */}
+      <div className="flex gap-3">
+        {tabs.map((tab, i) => {
+          const isActive = i === activeTab;
+          const isLocked = tab.status === "locked";
+
+          return (
+            <button
+              key={i}
+              onClick={() => !isLocked && setActiveTab(i)}
+              disabled={isLocked}
+              className={`flex-1 rounded-xl p-4 text-left transition-all duration-200 cursor-pointer border ${
                 isActive
-                  ? "bg-[#E8F8EF] text-[#16A34A] border-[#25D366]/20 px-3 py-1"
-                  : "bg-red-50 text-red-600 border-red-200 px-3 py-1"
-              }
+                  ? "bg-[#25D366] text-white border-[#25D366] shadow-md shadow-[#25D366]/20"
+                  : isLocked
+                    ? "bg-gray-50 text-gray-400 border-gray-200 opacity-60 cursor-not-allowed"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:shadow-sm"
+              }`}
             >
-              {isActive ? "Actif" : "Inactif"}
-            </Badge>
-            <Switch
-              checked={isActive}
-              onCheckedChange={setIsActive}
-              className="data-[state=checked]:bg-[#25D366]"
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center ${
+                    isActive ? "bg-white/30" : "bg-gray-200"
+                  }`}
+                >
+                  {isActive ? (
+                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <div className="w-2 h-2 rounded-sm bg-gray-400" />
+                  )}
+                </div>
+                <span className={`text-sm font-semibold ${isActive ? "text-white" : "text-gray-800"}`}>
+                  {tab.name}
+                </span>
+              </div>
+              <p className={`text-xs ml-6 ${isActive ? "text-white/80" : "text-gray-400"}`}>
+                {tab.status === "connected" ? "Connecté" : isLocked ? "Verrouillé" : "Inactif"}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Configuration Card ── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 sm:p-8 space-y-6">
+          {/* Agent Name */}
+          <div className="space-y-2">
+            <label
+              htmlFor="agent-name"
+              className="text-sm font-semibold text-gray-800"
+            >
+              Nom de l&apos;agent
+            </label>
+            <input
+              id="agent-name"
+              type="text"
+              value={config.agentName}
+              onChange={(e) => updateConfig("agentName", e.target.value)}
+              placeholder="Nom de votre agent IA"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366] transition-all"
             />
           </div>
-        </div>
-      </div>
 
-      {/* ── Agent Identity Card ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-5">
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="w-4 h-4 text-[#16A34A]" />
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-            Identité de l&apos;agent
-          </h2>
-        </div>
-
-        {/* Agent Name */}
-        <div className="space-y-2">
-          <Label htmlFor="agent-name" className="text-sm font-medium text-gray-700">
-            Nom de l&apos;agent
-          </Label>
-          <Input
-            id="agent-name"
-            value={agentName}
-            onChange={(e) => setAgentName(e.target.value)}
-            placeholder="Nom de votre agent IA"
-            className="w-full"
-          />
-        </div>
-
-        {/* Agent Description */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="agent-desc"
-            className="text-sm font-medium text-gray-700"
+          {/* AI Prompt Generator */}
+          <div
+            onClick={() => setShowAIPrompt(!showAIPrompt)}
+            className="bg-[#E8F8EF] rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-[#D1FAE5] transition-colors border border-[#25D366]/10"
           >
-            Personnalité / Description
-          </Label>
-          <Textarea
-            id="agent-desc"
-            value={agentDescription}
-            onChange={(e) => setAgentDescription(e.target.value)}
-            placeholder="Décrivez la personnalité de votre agent..."
-            rows={3}
-            className="w-full resize-none"
-          />
-          <p className="text-xs text-gray-400 flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            Cette description aide l&apos;IA à adopter le bon ton dans ses
-            réponses.
-          </p>
-        </div>
-
-        {/* Welcome Message */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="welcome-msg"
-            className="text-sm font-medium text-gray-700"
-          >
-            Message d&apos;accueil
-          </Label>
-          <Textarea
-            id="welcome-msg"
-            value={welcomeMessage}
-            onChange={(e) => setWelcomeMessage(e.target.value)}
-            placeholder="Message envoyé automatiquement quand un client écrit pour la première fois..."
-            rows={3}
-            className="w-full resize-none"
-          />
-          <p className="text-xs text-gray-400 flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            Utilisez [Nom de la boutique] comme variable dynamique.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Language & Style Card ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Languages className="w-4 h-4 text-[#16A34A]" />
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-            Langue &amp; Style
-          </h2>
-        </div>
-
-        {/* Language Selector */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">
-            Langue de l&apos;agent
-          </Label>
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="w-full sm:w-64">
-              <SelectValue placeholder="Choisir une langue" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="francais">🇫🇷 Français</SelectItem>
-              <SelectItem value="english">🇬🇧 English</SelectItem>
-              <SelectItem value="wolof">🇸🇳 Wolof</SelectItem>
-              <SelectItem value="bambara">🇲🇱 Bambara</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Response Style */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium text-gray-700">
-            Style de réponse
-          </Label>
-          <RadioGroup
-            value={responseStyle}
-            onValueChange={setResponseStyle}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-          >
-            {[
-              {
-                value: "amical",
-                label: "Amical",
-                desc: "Chaleureux et proche du client",
-                emoji: "😊",
-              },
-              {
-                value: "professionnel",
-                label: "Professionnel",
-                desc: "Sérieux et concis",
-                emoji: "💼",
-              },
-              {
-                value: "decontracte",
-                label: "Décontracté",
-                desc: "Cool et décontracté",
-                emoji: "✌️",
-              },
-            ].map((style) => (
-              <label
-                key={style.value}
-                className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  responseStyle === style.value
-                    ? "border-[#25D366] bg-[#E8F8EF]"
-                    : "border-gray-100 hover:border-gray-200"
-                }`}
-              >
-                <RadioGroupItem
-                  value={style.value}
-                  className="mt-0.5"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {style.emoji} {style.label}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-0.5">{style.desc}</p>
-                </div>
-              </label>
-            ))}
-          </RadioGroup>
-        </div>
-      </div>
-
-      {/* ── Auto-Reply Card ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-[#16A34A]" />
-            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-              Réponse automatique
-            </h2>
-          </div>
-          <Switch
-            checked={autoReply}
-            onCheckedChange={setAutoReply}
-            className="data-[state=checked]:bg-[#25D366]"
-          />
-        </div>
-
-        <p className="text-xs text-gray-500">
-          L&apos;agent répond automatiquement aux messages des clients après un
-          délai défini.
-        </p>
-
-        {autoReply && (
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium text-gray-700">
-                Délai avant réponse
-              </Label>
-              <span className="text-sm font-bold text-[#16A34A]">
-                {replyDelay[0]}s
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#25D366] flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-800">
+                Générer le prompt avec l&apos;IA
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#25D366]/20 text-[10px] font-bold text-[#16A34A] uppercase tracking-wide">
+                Nouveau
               </span>
             </div>
-            <Slider
-              value={replyDelay}
-              onValueChange={setReplyDelay}
-              min={1}
-              max={30}
-              step={1}
-              className="w-full [&_[data-slot=slider-range]]:bg-[#25D366] [&_[data-slot=slider-thumb]]:border-[#25D366]"
+            <ChevronDown
+              className={`w-5 h-5 text-[#16A34A] transition-transform duration-200 ${
+                showAIPrompt ? "rotate-180" : ""
+              }`}
             />
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>1 seconde</span>
-              <span>15 secondes</span>
-              <span>30 secondes</span>
+          </div>
+
+          {showAIPrompt && (
+            <div className="bg-[#F0FDF4] rounded-xl p-5 border border-[#25D366]/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-sm text-gray-700">
+                Laissez l&apos;IA générer automatiquement des instructions optimisées pour votre agent
+                en fonction de votre activité.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    updateConfig(
+                      "instructions",
+                      "Tu es l'assistante de [Nom de l'entreprise].\nTu réponds aux questions sur nos produits et services.\nTu es professionnelle, chaleureuse et concise."
+                    );
+                    setShowAIPrompt(false);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Générer
+                </button>
+                <button
+                  onClick={() => setShowAIPrompt(false)}
+                  className="px-4 py-2.5 rounded-xl bg-white text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* ── Knowledge Base Card (FAQ) ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-[#16A34A]" />
-            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-              Base de connaissances
-            </h2>
-          </div>
-          <Badge className="bg-[#E8F8EF] text-[#16A34A] border-[#25D366]/20">
-            {faqs.length} FAQ{faqs.length > 1 ? "s" : ""}
-          </Badge>
-        </div>
-
-        <p className="text-xs text-gray-500">
-          Ajoutez des questions fréquentes pour enrichir les réponses de votre
-          agent. Il pourra les utiliser pour répondre plus précisément aux
-          clients.
-        </p>
-
-        {/* FAQ Accordion */}
-        <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, index) => (
-            <AccordionItem
-              key={faq.id}
-              value={faq.id}
-              className="border-gray-100"
+          {/* Personalized Instructions */}
+          <div className="space-y-2">
+            <label
+              htmlFor="instructions"
+              className="text-sm font-semibold text-gray-800"
             >
-              <AccordionTrigger className="text-sm font-medium text-gray-800 hover:no-underline">
-                <div className="flex items-center gap-2 pr-2">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-[#E8F8EF] flex items-center justify-center text-xs font-bold text-[#16A34A]">
-                    {index + 1}
-                  </span>
-                  <span className="text-left">{faq.question}</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="pl-8 space-y-3">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {faq.answer}
-                  </p>
-                  <button
-                    onClick={() => handleRemoveFAQ(faq.id)}
-                    className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Supprimer cette FAQ
-                  </button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-
-        {/* Add FAQ Button / Form */}
-        {!showAddFAQ ? (
-          <button
-            onClick={() => setShowAddFAQ(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:text-[#16A34A] hover:border-[#25D366]/30 hover:bg-[#E8F8EF]/50 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Ajouter une FAQ
-          </button>
-        ) : (
-          <div className="space-y-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-700">
-                Nouvelle FAQ
-              </p>
-              <button
-                onClick={() => {
-                  setShowAddFAQ(false);
-                  setNewQuestion("");
-                  setNewAnswer("");
-                }}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-600">
-                Question
-              </Label>
-              <Input
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-                placeholder="Ex: Quels sont vos horaires d'ouverture ?"
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-600">
-                Réponse
-              </Label>
-              <Textarea
-                value={newAnswer}
-                onChange={(e) => setNewAnswer(e.target.value)}
-                placeholder="Ex: Nous sommes ouverts du lundi au samedi de 8h à 20h."
-                rows={3}
-                className="w-full resize-none"
-              />
-            </div>
-            <div className="flex items-center gap-2 justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowAddFAQ(false);
-                  setNewQuestion("");
-                  setNewAnswer("");
-                }}
-                className="text-gray-500 cursor-pointer"
-              >
-                Annuler
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleAddFAQ}
-                disabled={!newQuestion.trim() || !newAnswer.trim()}
-                className="bg-[#25D366] hover:bg-[#16A34A] text-white cursor-pointer"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Ajouter
-              </Button>
-            </div>
+              Instructions personnalisées
+            </label>
+            <textarea
+              id="instructions"
+              value={config.instructions}
+              onChange={(e) => updateConfig("instructions", e.target.value)}
+              placeholder="Définissez les instructions pour votre agent IA..."
+              rows={6}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366] focus:bg-white transition-all resize-none leading-relaxed"
+            />
+            <p className="text-xs text-gray-400 flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              Ces instructions guident l&apos;IA dans ses réponses aux clients.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* ── Product Catalog Status Card ── */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#E8F8EF]">
-              <ShoppingCart className="w-5 h-5 text-[#16A34A]" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">
-                Catalogue de produits
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Synchronisation automatique avec votre boutique
-              </p>
-            </div>
+          {/* Notification Number */}
+          <div className="space-y-2">
+            <label
+              htmlFor="notif-number"
+              className="text-sm font-semibold text-gray-800"
+            >
+              Numéro de notification commandes
+            </label>
+            <p className="text-xs text-gray-500 flex items-start gap-1.5">
+              <Bell className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-400" />
+              Ce numéro WhatsApp reçoit une alerte à chaque nouvelle commande client.
+            </p>
+            <input
+              id="notif-number"
+              type="tel"
+              value={config.notificationNumber}
+              onChange={(e) => updateConfig("notificationNumber", e.target.value)}
+              placeholder="Ex: 221760289607 (sans + ni espaces)"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366] transition-all"
+            />
           </div>
-          <Badge className="bg-[#E8F8EF] text-[#16A34A] border-[#25D366]/20 px-3 py-1 text-xs">
-            <CheckCircle2 className="w-3 h-3 mr-1" />
-            12 produits synchronisés
-          </Badge>
         </div>
-      </div>
 
-      {/* ── Save Button ── */}
-      <div className="flex items-center justify-end gap-3 pb-4">
-        {saved && (
-          <div className="flex items-center gap-2 text-sm font-medium text-[#16A34A] animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <CheckCircle2 className="w-4 h-4" />
-            Configuration sauvegardée avec succès !
-          </div>
-        )}
-        <Button
-          onClick={handleSave}
-          className="bg-[#25D366] hover:bg-[#16A34A] text-white px-6 cursor-pointer"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          Enregistrer la configuration
-        </Button>
+        {/* Save Button Footer */}
+        <div className="px-6 sm:px-8 py-5 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
+          {saved ? (
+            <div className="flex items-center gap-2 text-sm font-medium text-[#16A34A] animate-in fade-in slide-in-from-left-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              Configuration sauvegardée !
+            </div>
+          ) : (
+            <div />
+          )}
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer shadow-sm shadow-[#25D366]/20"
+          >
+            <Save className="w-4 h-4" />
+            Enregistrer
+          </button>
+        </div>
       </div>
     </div>
   );
