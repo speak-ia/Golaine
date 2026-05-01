@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Bell,
   Search,
@@ -73,8 +73,7 @@ export default function DashboardHeader() {
     e.target.value = "";
   }, [setProfilePhoto]);
 
-  // P3: Memoize date string — only recalculates when Date minute changes
-  const dateStr = useMemo(() => {
+  const dateStr = (() => {
     const d = new Date();
     const days = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
     const months = [
@@ -82,7 +81,7 @@ export default function DashboardHeader() {
       "juillet", "août", "septembre", "octobre", "novembre", "décembre",
     ];
     return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
-  }, []);
+  })();
 
   return (
     <>

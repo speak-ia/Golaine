@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
@@ -22,8 +22,17 @@ import {
   Headphones,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import AuthPages from "@/components/AuthPages";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+const AuthPages = lazy(() => import("@/components/AuthPages"));
+const DashboardLayout = lazy(() => import("@/components/dashboard/DashboardLayout"));
+
+/* ──────────────────── Loading fallback ──────────────────── */
+function ViewLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[rgb(10,10,10)]">
+      <div className="w-8 h-8 border-2 border-[rgb(37,211,102)] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 /* ──────────────────── Animation wrapper ──────────────────── */
 function FadeIn({
@@ -59,20 +68,24 @@ function FadeIn({
 }
 
 /* ──────────────────── NAVBAR ──────────────────── */
-function Navbar() {
+const Navbar = React.memo(function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [currency, setCurrency] = useState("F CFA");
-  const { pageView, setPageView } = useAuthStore();
+  const pageView = useAuthStore((s) => s.pageView);
+  const setPageView = useAuthStore((s) => s.setPageView);
   const currencies = ["$ USD", "€ EUR", "F CFA", "UM"];
   const currencyRef = useRef<HTMLDivElement>(null);
 
+  const handleScroll = useCallback(() => {
+    setScrolled(window.scrollY > 20);
+  }, []);
+
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   // Close currency dropdown on outside click
   useEffect(() => {
@@ -232,7 +245,7 @@ function Navbar() {
       </AnimatePresence>
     </nav>
   );
-}
+});
 
 /* ──────────────────── HERO ──────────────────── */
 function HeroSection() {
@@ -1316,7 +1329,7 @@ function Footer() {
 }
 
 /* ──────────────────── MAIN PAGE ──────────────────── */
-function LandingPage() {
+const LandingPage = React.memo(function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[rgb(10,10,10)]">
       <Navbar />
@@ -1335,19 +1348,21 @@ function LandingPage() {
       <Footer />
     </div>
   );
-}
+});
 
 /* ──────────────────── APP ROUTER ──────────────────── */
 export default function HomePage() {
-  const { pageView } = useAuthStore();
+  const pageView = useAuthStore((s) => s.pageView);
 
-  if (pageView === "dashboard") {
-    return <DashboardLayout />;
-  }
-
-  if (pageView === "login" || pageView === "signup") {
-    return <AuthPages />;
-  }
-
-  return <LandingPage />;
+  return (
+    <Suspense fallback={<ViewLoader />}>
+      {pageView === "login" || pageView === "signup" ? (
+        <AuthPages />
+      ) : pageView === "dashboard" ? (
+        <DashboardLayout />
+      ) : (
+        <LandingPage />
+      )}
+    </Suspense>
+  );
 }

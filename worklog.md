@@ -201,3 +201,55 @@ Stage Summary:
 - Cookie hardened with SameSite=Strict + Secure flags
 - Full security header stack added via Next.js config
 - Deprecated clipboard API removed in favor of modern async pattern
+
+---
+Task ID: 5
+Agent: Main Orchestrator (performance audit session)
+Task: Full performance analysis — identify and fix re-renders, memory leaks, heavy imports, missing memoization
+
+Work Log:
+- Read all 12+ key source files for comprehensive performance analysis
+- Identified 10 performance issues across 6 categories
+- Delegated fixes to 4 parallel sub-agents for MesProduitsPage, chat pages, page.tsx, and misc fixes
+- All sub-agents completed successfully; lint passes with 0 errors
+
+Stage Summary:
+- **10 performance fixes applied across 7 files:**
+
+  **🔴 1. Redundant Re-renders — Zustand full-store destructuring**
+  - `MesProduitsPage.tsx`: Changed `const { products, categories, ... } = useProductStore()` (subscribes to entire store) → 5 individual selectors `useProductStore((s) => s.products)` etc.
+  - `page.tsx` Navbar: Changed `const { pageView, setPageView } = useAuthStore()` → individual selectors
+  - `page.tsx` HomePage: Same fix for pageView selector
+
+  **🟡 2. Missing React.memo on child components**
+  - `MesProduitsPage.tsx`: Wrapped `ProductCard`, `ProductRow`, `StatCard`, `CategoryManager` with `React.memo()`
+  - `page.tsx`: Wrapped `Navbar` and `LandingPage` with `React.memo()`
+
+  **🟡 3. Missing useCallback on handler functions**
+  - `MesProduitsPage.tsx`: Wrapped 11 handler functions with `useCallback` + correct dependency arrays
+  - `page.tsx` Navbar: Wrapped `handleScroll` with `useCallback`
+
+  **🔴 4. setTimeout memory leaks (unmount safety)**
+  - `TesterAgentPage.tsx`: Added `timeoutRef` + cleanup `useEffect` for agent response timeout
+  - `ConversationsPage.tsx`: Added `typingTimeoutRef` + `responseTimeoutRef` + cleanup `useEffect`
+  - `AuthPages.tsx` SignUpPage: Added `signupTimeoutRef` + cleanup `useEffect`
+  - `AuthPages.tsx` LoginPage: Added `loginTimeoutRef` + cleanup `useEffect`
+
+  **🟡 5. Heavy imports — missing lazy loading**
+  - `page.tsx`: Changed static imports of `AuthPages` and `DashboardLayout` → `React.lazy()` + `Suspense`
+  - Added `ViewLoader` spinner component as Suspense fallback
+  - (DashboardPage.tsx already had lazy loading for sub-pages — confirmed)
+
+  **🟡 6. dangerouslySetInnerHTML CSS injection**
+  - `TesterAgentPage.tsx`: Moved ~330 lines of inline CSS (`phoneFrameStyles`) → `globals.css`
+  - Removed `dangerouslySetInnerHTML` from JSX (eliminates per-render CSS re-parsing)
+
+  **🟡 7. Stale memo bug (bonus)**
+  - `DashboardHeader.tsx`: `dateStr` used `useMemo(() => {...}, [])` — computed once on mount, never updated
+  - Changed to plain IIFE `(() => {...})()` — trivial cost, always shows current date
+
+  **📊 Non-applicable categories:**
+  - API calls: No backend API calls exist (all mock/in-memory data)
+  - Unused dependencies in package.json: ~40 packages installed but not used (noted but not removed to avoid breaking potential future features)
+
+  **Verification:** `bun run lint` — 0 errors. Dev server running on port 3000.

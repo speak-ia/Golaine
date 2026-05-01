@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, Building2, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
@@ -172,6 +172,7 @@ function PasswordInput({
 function SignUpPage() {
   const { setPageView } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const signupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState({
     businessName: "",
     email: "",
@@ -188,11 +189,17 @@ function SignUpPage() {
     if (form.password.length < 6) return;
     setLoading(true);
     // Simulate loading — no backend, redirect to dashboard
-    setTimeout(() => {
+    signupTimeoutRef.current = setTimeout(() => {
       setLoading(false);
       setPageView("dashboard");
     }, 1500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (signupTimeoutRef.current) clearTimeout(signupTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <motion.div
@@ -319,6 +326,7 @@ function SignUpPage() {
 function LoginPage() {
   const { setPageView } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const loginTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -333,11 +341,17 @@ function LoginPage() {
     if (!form.email.trim() || !form.password.trim()) return;
     setLoading(true);
     // Simulate loading — no backend, redirect to dashboard
-    setTimeout(() => {
+    loginTimeoutRef.current = setTimeout(() => {
       setLoading(false);
       setPageView("dashboard");
     }, 1500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (loginTimeoutRef.current) clearTimeout(loginTimeoutRef.current);
+    };
+  }, []);
 
   return (
     <motion.div

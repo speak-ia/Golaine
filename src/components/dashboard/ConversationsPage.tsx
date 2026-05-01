@@ -224,6 +224,8 @@ export default function ConversationsPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── Derived ── */
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
@@ -305,11 +307,11 @@ export default function ConversationsPage() {
     setInputValue("");
 
     // Show typing indicator, then respond
-    setTimeout(() => {
+    typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(true);
     }, 1500);
 
-    setTimeout(() => {
+    responseTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
 
       const responseText =
@@ -343,6 +345,14 @@ export default function ConversationsPage() {
       );
     }, 3500);
   };
+
+  /* ── Cleanup timeouts on unmount ── */
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (responseTimeoutRef.current) clearTimeout(responseTimeoutRef.current);
+    };
+  }, []);
 
   /* ── Handle key press ── */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

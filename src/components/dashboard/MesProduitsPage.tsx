@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Search,
   Plus,
@@ -44,8 +44,17 @@ import {
   useProductStore,
   MOCK_AGENTS_IA,
   type Product,
-  type ProductFormData,
 } from "@/lib/store";
+
+interface ProductFormData {
+  name: string;
+  price: string;
+  category: string;
+  stock: string;
+  status: boolean;
+  image: string;
+  assignedAgent: string;
+}
 
 /* ──────────────────── Helpers ──────────────────── */
 function getAgentIA(id: string | null) {
@@ -144,7 +153,7 @@ function productToForm(p: Product): ProductFormData {
 }
 
 /* ──────────────────── Category Manager Component ──────────────────── */
-function CategoryManager() {
+const CategoryManager = React.memo(function CategoryManager() {
   const { categories, addCategory, renameCategory, deleteCategory } = useProductStore();
   const [newCatName, setNewCatName] = useState("");
   const [editingCat, setEditingCat] = useState<string | null>(null);
@@ -280,7 +289,7 @@ function CategoryManager() {
       </div>
     </div>
   );
-}
+});
 
 /* ──────────────────── Product Form ──────────────────── */
 function ProductForm({
@@ -485,7 +494,7 @@ function ProductForm({
 }
 
 /* ──────────────────── Stat Card ──────────────────── */
-function StatCard({
+const StatCard = React.memo(function StatCard({
   icon: Icon,
   label,
   value,
@@ -512,10 +521,10 @@ function StatCard({
       </div>
     </div>
   );
-}
+});
 
 /* ──────────────────── Product Card (Grid View) ──────────────────── */
-function ProductCard({
+const ProductCard = React.memo(function ProductCard({
   product,
   onView,
   onEdit,
@@ -645,10 +654,10 @@ function ProductCard({
       </div>
     </div>
   );
-}
+});
 
 /* ──────────────────── Product Row (List View) ──────────────────── */
-function ProductRow({
+const ProductRow = React.memo(function ProductRow({
   product,
   onView,
   onEdit,
@@ -749,11 +758,15 @@ function ProductRow({
       </div>
     </div>
   );
-}
+});
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function MesProduitsPage() {
-  const { products, categories, addProduct, updateProduct, deleteProduct } = useProductStore();
+  const products = useProductStore((s) => s.products);
+  const categories = useProductStore((s) => s.categories);
+  const addProduct = useProductStore((s) => s.addProduct);
+  const updateProduct = useProductStore((s) => s.updateProduct);
+  const deleteProduct = useProductStore((s) => s.deleteProduct);
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -808,22 +821,22 @@ export default function MesProduitsPage() {
   }, [filteredProducts, effectivePage]);
 
   /* ── Handlers ── */
-  function handleOpenView(product: Product) {
+  const handleOpenView = useCallback((product: Product) => {
     setViewingProduct(product);
     setViewOpen(true);
-  }
+  }, []);
 
-  function handleCloseView() {
+  const handleCloseView = useCallback(() => {
     setViewOpen(false);
     setViewingProduct(null);
-  }
+  }, []);
 
-  function handleOpenAdd() {
+  const handleOpenAdd = useCallback(() => {
     setFormData(EMPTY_FORM);
     setAddOpen(true);
-  }
+  }, []);
 
-  function handleSaveAdd() {
+  const handleSaveAdd = useCallback(() => {
     if (!formData.name.trim() || !formData.price || Number(formData.price) <= 0) return;
     if (!formData.category) return;
     addProduct({
@@ -838,15 +851,15 @@ export default function MesProduitsPage() {
     setAddOpen(false);
     setFormData(EMPTY_FORM);
     setCurrentPage(1); // Go to first page to see new product
-  }
+  }, [formData, addProduct]);
 
-  function handleOpenEdit(product: Product) {
+  const handleOpenEdit = useCallback((product: Product) => {
     setEditingProduct(product);
     setFormData(productToForm(product));
     setEditOpen(true);
-  }
+  }, []);
 
-  function handleSaveEdit() {
+  const handleSaveEdit = useCallback(() => {
     if (!editingProduct || !formData.name.trim() || !formData.category) return;
     if (Number(formData.price) <= 0) return;
     updateProduct(editingProduct.id, {
@@ -861,14 +874,14 @@ export default function MesProduitsPage() {
     setEditOpen(false);
     setEditingProduct(null);
     setFormData(EMPTY_FORM);
-  }
+  }, [formData, editingProduct, updateProduct]);
 
-  function handleOpenDelete(product: Product) {
+  const handleOpenDelete = useCallback((product: Product) => {
     setDeletingProduct(product);
     setDeleteOpen(true);
-  }
+  }, []);
 
-  function handleConfirmDelete() {
+  const handleConfirmDelete = useCallback(() => {
     if (!deletingProduct) return;
     deleteProduct(deletingProduct.id);
     setDeleteOpen(false);
@@ -879,22 +892,22 @@ export default function MesProduitsPage() {
     if (currentPage > newTotalPages) {
       setCurrentPage(newTotalPages);
     }
-  }
+  }, [deletingProduct, deleteProduct, currentPage, products]);
 
-  function handleCategoryChange(val: string) {
+  const handleCategoryChange = useCallback((val: string) => {
     setCategoryFilter(val);
     setCurrentPage(1);
-  }
+  }, []);
 
-  function handleStatusChange(val: string) {
+  const handleStatusChange = useCallback((val: string) => {
     setStatusFilter(val);
     setCurrentPage(1);
-  }
+  }, []);
 
-  function handleSearchChange(val: string) {
+  const handleSearchChange = useCallback((val: string) => {
     setSearch(val);
     setCurrentPage(1);
-  }
+  }, []);
 
   function getPageNumbers(): (number | "ellipsis")[] {
     const pages: (number | "ellipsis")[] = [];
