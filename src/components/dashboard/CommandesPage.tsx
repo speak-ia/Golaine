@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   Plus,
   FileText,
@@ -19,6 +19,8 @@ import {
   ShoppingBag,
   AlertTriangle,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 /* ──────────────────── Types ──────────────────── */
@@ -83,37 +85,21 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 ];
 
 /* ──────────────────── Mock Data ──────────────────── */
+const ITEMS_PER_PAGE = 5;
+
 const INITIAL_ORDERS: Order[] = [
-  {
-    id: 1001,
-    client: "22241857975",
-    clientSub: "22241857975",
-    produit: "Iphone PRO max",
-    adresse: "Point E, rue 37",
-    montant: 250000,
-    status: "confirmee",
-    date: "27/04/2026",
-  },
-  {
-    id: 1002,
-    client: "22241857975",
-    clientSub: "22241857975",
-    produit: "Protéine Premium",
-    adresse: "Pikine rue, 10",
-    montant: 50000,
-    status: "en_attente",
-    date: "27/04/2026",
-  },
-  {
-    id: 1003,
-    client: "22241857975",
-    clientSub: "22241857975",
-    produit: "Protéine Premium",
-    adresse: "rue, 10 pikine",
-    montant: 50000,
-    status: "confirmee",
-    date: "26/04/2026",
-  },
+  { id: 1001, client: "22241857975", clientSub: "22241857975", produit: "Iphone PRO max", adresse: "Point E, rue 37", montant: 250000, status: "confirmee", date: "27/04/2026" },
+  { id: 1002, client: "778456123", clientSub: "778456123", produit: "Protéine Premium", adresse: "Pikine rue 10", montant: 50000, status: "en_attente", date: "27/04/2026" },
+  { id: 1003, client: "775321987", clientSub: "775321987", produit: "Robe Wax S-400", adresse: "Rue 10 Pikine", montant: 50000, status: "confirmee", date: "26/04/2026" },
+  { id: 1004, client: "771234567", clientSub: "771234567", produit: "Sac À Main Dakar", adresse: "Médina, rue 45", montant: 6500, status: "livree", date: "26/04/2026" },
+  { id: 1005, client: "779876543", clientSub: "779876543", produit: "Huile d'Argan Bio", adresse: "Almadies, bd de la Corniche", montant: 12000, status: "en_preparation", date: "25/04/2026" },
+  { id: 1006, client: "763456789", clientSub: "763456789", produit: "Bissap 1L", adresse: "Ouakam, route des Almadies", montant: 1500, status: "confirmee", date: "25/04/2026" },
+  { id: 1007, client: "782345678", clientSub: "782345678", produit: "Café Touba 500g", adresse: "Parcelles Assainies, U23", montant: 3000, status: "annulee", date: "24/04/2026" },
+  { id: 1008, client: "770987654", clientSub: "770987654", produit: "Tunique Boubou", adresse: "Grand Yoff, carrefour A", montant: 9000, status: "livree", date: "24/04/2026" },
+  { id: 1009, client: "776543210", clientSub: "776543210", produit: "Savon Noir Naturel", adresse: "Liberté 6, villa 12", montant: 2500, status: "en_attente", date: "23/04/2026" },
+  { id: 1010, client: "778901234", clientSub: "778901234", produit: "Pagne Tissé Premium", adresse: "Fann Résidence, lot 8", montant: 8000, status: "confirmee", date: "23/04/2026" },
+  { id: 1011, client: "774567890", clientSub: "774567890", produit: "Bijoux Mauritanien", adresse: "Ngor, rue des pêcheurs", montant: 15000, status: "en_preparation", date: "22/04/2026" },
+  { id: 1012, client: "771122334", clientSub: "771122334", produit: "Thiakry Nature", adresse: "Dakar Plateau, av. de la République", montant: 2000, status: "livree", date: "22/04/2026" },
 ];
 
 /* ──────────────────── Helpers ──────────────────── */
@@ -426,6 +412,87 @@ const styles = `
   .cmd-btn-danger:hover {
     background: #dc2626;
     box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+  }
+
+  /* Pagination */
+  .cmd-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 20px;
+    padding: 0 4px;
+  }
+  .cmd-page-btn {
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    user-select: none;
+  }
+  .cmd-page-btn:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+  .cmd-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .cmd-page-num {
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .cmd-page-num:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+  .cmd-page-num--active {
+    background: #25D366;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(37,211,102,0.3);
+  }
+  .cmd-page-num--active:hover {
+    background: #16A34A;
+    color: #ffffff;
+  }
+  .cmd-page-ellipsis {
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 14px;
+    user-select: none;
+  }
+  .cmd-pagination-info {
+    font-size: 12px;
+    color: #9ca3af;
+    text-align: center;
+    margin-top: 8px;
   }
 
   /* Scrollbar */
@@ -778,10 +845,35 @@ function DeleteModal({
 /* ──────────────────── Main Component ──────────────────── */
 export default function CommandesPage() {
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [currentPage, setCurrentPage] = useState(1);
   const [activeModal, setActiveModal] = useState<{
     type: ModalType;
     order: Order | null;
   }>({ type: null, order: null });
+
+  /* Pagination */
+  const totalPages = Math.max(1, Math.ceil(orders.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedOrders = useMemo(() => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
+    return orders.slice(start, start + ITEMS_PER_PAGE);
+  }, [orders, safePage]);
+
+  function getPageNumbers(): (number | "ellipsis")[] {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safePage > 3) pages.push("ellipsis");
+      const s = Math.max(2, safePage - 1);
+      const e = Math.min(totalPages - 1, safePage + 1);
+      for (let i = s; i <= e; i++) pages.push(i);
+      if (safePage < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
+  }
 
   /* Stats */
   const total = orders.length;
@@ -817,7 +909,10 @@ export default function CommandesPage() {
 
   const handleDelete = useCallback(() => {
     if (!activeModal.order) return;
-    setOrders((prev) => prev.filter((o) => o.id !== activeModal.order!.id));
+    setOrders((prev) => {
+      const next = prev.filter((o) => o.id !== activeModal.order!.id);
+      return next;
+    });
     closeModal();
   }, [activeModal.order, closeModal]);
 
@@ -894,7 +989,7 @@ export default function CommandesPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => {
+                {paginatedOrders.map((order) => {
                   const st = STATUS_MAP[order.status];
                   return (
                     <tr key={order.id} className="cmd-tr">
@@ -969,6 +1064,46 @@ export default function CommandesPage() {
             </div>
           )}
         </div>
+
+        {/* ── Pagination ── */}
+        {totalPages > 1 && (
+          <div>
+            <div className="cmd-pagination">
+              <button
+                className="cmd-page-btn"
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Précédent
+              </button>
+              {getPageNumbers().map((page, idx) =>
+                page === "ellipsis" ? (
+                  <span key={`e-${idx}`} className="cmd-page-ellipsis">…</span>
+                ) : (
+                  <button
+                    key={page}
+                    className={`cmd-page-num ${page === safePage ? "cmd-page-num--active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+              <button
+                className="cmd-page-btn"
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Suivant
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="cmd-pagination-info">
+              Affichage {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, orders.length)} sur {orders.length} commandes
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Modals ── */}
