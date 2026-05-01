@@ -1084,41 +1084,76 @@ export default function ParametresPage() {
   };
 
   return (
-    <div className="h-full">
+    <div className="w-full">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-[22px] font-bold text-gray-900 tracking-tight">
+          Paramètres
+        </h1>
+        <p className="text-[13px] text-gray-500 mt-1">
           Gérez les paramètres de votre compte et de votre entreprise.
         </p>
       </div>
 
-      {/* Tab bar */}
-      <div className="border-b border-gray-200 mb-6 overflow-x-auto">
-        <nav className="flex gap-0 min-w-max">
+      {/* Desktop: sidebar tabs + content  |  Mobile: horizontal tabs */}
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* ── Sidebar Tabs (desktop) ── */}
+        <aside className="hidden md:block flex-shrink-0">
+          <nav
+            className="w-[220px] bg-white rounded-xl border border-gray-200 p-2 space-y-0.5 sticky top-6"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[13.5px] font-medium transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-[#E8F8EF] text-[#16A34A] font-semibold"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  <Icon
+                    className={`w-[18px] h-[18px] flex-shrink-0 ${
+                      isActive ? "text-[#16A34A]" : "text-gray-400"
+                    }`}
+                  />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* ── Mobile: horizontal tab bar ── */}
+        <nav className="md:hidden flex gap-1 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium whitespace-nowrap transition-all cursor-pointer flex-shrink-0 ${
                   isActive
-                    ? "border-[#25D366] text-[#16A34A]"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "bg-[#E8F8EF] text-[#16A34A] font-semibold"
+                    : "text-gray-500 bg-gray-100 hover:bg-gray-200"
                 }`}
               >
-                <tab.icon className={`w-4 h-4 ${isActive ? "text-[#16A34A]" : ""}`} />
+                <Icon className="w-4 h-4" />
                 {tab.label}
               </button>
             );
           })}
         </nav>
-      </div>
 
-      {/* Tab content */}
-      <div className="max-w-3xl">
-        {renderTab()}
+        {/* ── Tab content ── */}
+        <div className="flex-1 min-w-0">
+          {renderTab()}
+        </div>
       </div>
     </div>
   );
