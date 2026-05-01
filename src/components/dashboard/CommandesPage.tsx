@@ -127,19 +127,21 @@ const styles = `
   .cmd-stat {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 16px 20px;
-    transition: box-shadow 0.2s ease;
+    border-radius: 12px;
+    padding: 18px 22px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    height: 100%;
   }
   .cmd-stat:hover {
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    transform: translateY(-1px);
   }
 
   /* Table container */
   .cmd-table-wrap {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
   }
 
@@ -825,7 +827,7 @@ export default function CommandesPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: styles }} />
 
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
@@ -843,7 +845,7 @@ export default function CommandesPage() {
         </div>
 
         {/* ── Stats Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -870,7 +872,16 @@ export default function CommandesPage() {
         {/* ── Table ── */}
         <div className="cmd-table-wrap">
           <div className="overflow-x-auto cmd-scroll">
-            <table className="w-full min-w-[800px]">
+            <table className="w-full" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "10%" }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th className="cmd-th">Client</th>
