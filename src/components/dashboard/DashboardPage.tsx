@@ -326,62 +326,26 @@ function DashboardHome() {
 export default function DashboardPage() {
   const { sidebarView } = useAuthStore();
 
-  const pageMap: Record<SidebarView, { title: string; component: React.ReactNode }> = {
-    dashboard: {
-      title: "Dashboard",
-      component: <DashboardHome />,
-    },
-    whatsapp: {
-      title: "Connecter WhatsApp",
-      component: <WhatsAppConnectionPage />,
-    },
-    agent: {
-      title: "Agent IA",
-      component: <AgentIAPage />,
-    },
-    tester: {
-      title: "Tester l'agent",
-      component: <TesterAgentPage />,
-    },
-    produits: {
-      title: "Mes produits",
-      component: <MesProduitsPage />,
-    },
-    conversations: {
-      title: "Conversations",
-      component: <ConversationsPage />,
-    },
-    contacts: {
-      title: "Contacts",
-      component: <ContactsPage />,
-    },
-    commandes: {
-      title: "Commandes",
-      component: <CommandesPage />,
-    },
-    rendezvous: {
-      title: "Rendez-vous",
-      component: <RendezVousPage />,
-    },
-    rapport: {
-      title: "Rapport hebdo",
-      component: <RapportHebdoPage />,
-    },
-    plan: {
-      title: "Mon Plan",
-      component: <MonPlanPage />,
-    },
-    parametres: {
-      title: "Paramètres",
-      component: <ParametresPage />,
-    },
+  const pageMap: Record<SidebarView, React.ReactNode> = {
+    dashboard: <DashboardHome />,
+    whatsapp: <WhatsAppConnectionPage />,
+    agent: <AgentIAPage />,
+    tester: <TesterAgentPage />,
+    produits: <MesProduitsPage />,
+    conversations: <ConversationsPage />,
+    contacts: <ContactsPage />,
+    commandes: <CommandesPage />,
+    rendezvous: <RendezVousPage />,
+    rapport: <RapportHebdoPage />,
+    plan: <MonPlanPage />,
+    parametres: <ParametresPage />,
   };
 
   const page = pageMap[sidebarView];
 
   return (
     <div className="h-full">
-      {page.component}
+      {page}
     </div>
   );
 }

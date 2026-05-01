@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   User,
   Building2,
@@ -28,6 +28,7 @@ import {
   SmartphoneNfc,
   LogOut,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -219,7 +220,8 @@ function ProfilTab() {
   const [langOpen, setLangOpen] = useState(false);
   const [tzOpen, setTzOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
-  const [photoChanged, setPhotoChanged] = useState(false);
+  const { profilePhoto, setProfilePhoto } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const langs = ["Français", "English", "Wolof"];
   const timezones = ["UTC+0 GMT", "UTC+1 Dakar"];
@@ -238,21 +240,47 @@ function ProfilTab() {
       <div className="bg-white rounded-2xl p-6 border border-gray-100">
         <h3 className="text-sm font-bold text-gray-700 mb-5">Photo de profil</h3>
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#25D366] to-[#16A34A] flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
-            AD
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#25D366] to-[#16A34A] flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden relative">
+            {profilePhoto ? (
+              <img src={profilePhoto} alt="Photo" className="w-full h-full object-cover" />
+            ) : (
+              "AD"
+            )}
           </div>
           <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!file.type.startsWith("image/")) return;
+                if (file.size > 5 * 1024 * 1024) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  setProfilePhoto(ev.target?.result as string);
+                  setFeedback({ type: "success", msg: "Photo mise à jour avec succès !" });
+                };
+                reader.readAsDataURL(file);
+                e.target.value = "";
+              }}
+            />
             <button
-              onClick={() => setPhotoChanged(true)}
+              onClick={() => fileInputRef.current?.click()}
               className="px-4 py-2 text-sm font-medium text-[#16A34A] bg-[#E8F8EF] hover:bg-[#d0f0de] rounded-xl transition-colors cursor-pointer"
             >
               <Camera className="w-4 h-4 inline mr-2" />
-              Changer la photo
+              {profilePhoto ? "Changer la photo" : "Ajouter une photo"}
             </button>
-            {photoChanged && (
-              <p className="text-xs text-[#16A34A] mt-2 flex items-center gap-1">
-                <Check className="w-3 h-3" /> Photo mise à jour
-              </p>
+            {profilePhoto && (
+              <button
+                onClick={() => setProfilePhoto(null)}
+                className="block mt-2 text-xs text-red-500 hover:text-red-600 transition-colors cursor-pointer"
+              >
+                Supprimer la photo
+              </button>
             )}
           </div>
         </div>
@@ -771,9 +799,23 @@ function IntegrationsTab() {
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [regenerateModal, setRegenerateModal] = useState(false);
 
+  const MOCK_API_KEY = "sk-golaine-a1b2c3d4e5f6g7h8i9j0";
+
   const copyApiKey = () => {
-    setApiKeyCopied(true);
-    setTimeout(() => setApiKeyCopied(false), 2000);
+    navigator.clipboard.writeText(MOCK_API_KEY).then(() => {
+      setApiKeyCopied(true);
+      setTimeout(() => setApiKeyCopied(false), 2000);
+    }).catch(() => {
+      // Fallback for older browsers
+      const textarea = document.createElement("textarea");
+      textarea.value = MOCK_API_KEY;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setApiKeyCopied(true);
+      setTimeout(() => setApiKeyCopied(false), 2000);
+    });
   };
 
   return (

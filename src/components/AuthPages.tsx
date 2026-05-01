@@ -184,6 +184,8 @@ function SignUpPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.businessName.trim() || !form.email.trim() || !form.password.trim()) return;
+    if (form.password.length < 6) return;
     setLoading(true);
     // Simulate loading — no backend, redirect to dashboard
     setTimeout(() => {
@@ -328,6 +330,7 @@ function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.email.trim() || !form.password.trim()) return;
     setLoading(true);
     // Simulate loading — no backend, redirect to dashboard
     setTimeout(() => {

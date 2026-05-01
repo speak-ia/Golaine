@@ -66,7 +66,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [currency, setCurrency] = useState("$ USD");
+  const [currency, setCurrency] = useState("F CFA");
   const { pageView, setPageView } = useAuthStore();
   const currencies = ["$ USD", "€ EUR", "F CFA", "UM"];
 
@@ -967,7 +967,7 @@ function PricingSection() {
   const plans = [
     {
       name: "Starter",
-      price: annual ? 23 : 29,
+      price: annual ? "23 000" : "29 000",
       period: "mois",
       desc: "Idéal pour démarrer votre automatisation.",
       features: [
@@ -981,7 +981,7 @@ function PricingSection() {
     },
     {
       name: "Pro",
-      price: annual ? 39 : 49,
+      price: annual ? "39 000" : "49 000",
       period: "mois",
       desc: "Pour les commerçants qui veulent grandir.",
       features: [
@@ -995,7 +995,7 @@ function PricingSection() {
     },
     {
       name: "Business",
-      price: annual ? 159 : 199,
+      price: annual ? "159 000" : "199 000",
       period: "mois",
       desc: "Solution complète pour les entreprises.",
       features: [
@@ -1086,7 +1086,7 @@ function PricingSection() {
                 </div>
                 <div className="mb-6">
                   <span className="text-4xl sm:text-5xl font-bold text-white">
-                    {plan.price}€
+                    {plan.price} <span className="text-xl font-medium text-[rgb(148,163,184)]">FCFA</span>
                   </span>
                   <span className="text-[rgb(148,163,184)]">
                     /{plan.period}

@@ -168,13 +168,12 @@ export default function AgentIAPage() {
   };
 
   const handleGenerate = () => {
-    if (!promptTextareaRef.current?.value) return;
+    const userInput = promptTextareaRef.current?.value?.trim();
+    if (!userInput) return;
     setIsGenerating(true);
     setTimeout(() => {
-      update(
-        "instructions",
-        `Tu es l'assistante IA de [Nom de l'entreprise], une boutique spécialisée dans la vente de produits de qualité.\n\nTon rôle :\n- Accueillir chaleureusement chaque client\n- Répondre aux questions sur les produits, prix et disponibilités\n- Aider les clients à passer commande\n- Fournir des informations sur la livraison et le paiement\n\nTon ton : professionnel, amical et concis.\nTu réponds toujours en français sauf si le client écrit dans une autre langue.`
-      );
+      const generated = `Tu es l'assistante IA de [Nom de l'entreprise], une boutique spécialisée dans la vente de produits de qualité.\n\nDescription de l'activité :\n${userInput}\n\nTon rôle :\n- Accueillir chaleureusement chaque client\n- Répondre aux questions sur les produits, prix et disponibilités\n- Aider les clients à passer commande\n- Fournir des informations sur la livraison et le paiement\n\nTon ton : professionnel, amical et concis.\nTu réponds toujours en français sauf si le client écrit dans une autre langue.`;
+      update("instructions", generated);
       setIsGenerating(false);
       setAiPromptOpen(false);
     }, 2000);

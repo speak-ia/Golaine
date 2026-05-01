@@ -887,7 +887,8 @@ export default function MesProduitsPage() {
   }
 
   function handleSaveAdd() {
-    if (!formData.name.trim() || !formData.price) return;
+    if (!formData.name.trim() || !formData.price || Number(formData.price) <= 0) return;
+    if (!formData.category) return;
     const newProduct: Product = {
       id: nextId,
       name: formData.name.trim(),
@@ -911,7 +912,8 @@ export default function MesProduitsPage() {
   }
 
   function handleSaveEdit() {
-    if (!editingProduct || !formData.name.trim()) return;
+    if (!editingProduct || !formData.name.trim() || !formData.category) return;
+    if (Number(formData.price) <= 0) return;
     setProducts((prev) =>
       prev.map((p) =>
         p.id === editingProduct.id
@@ -958,10 +960,13 @@ export default function MesProduitsPage() {
   }
 
   function handleDeleteCategory(name: string) {
-    setCategories((prev) => prev.filter((c) => c !== name));
-    setProducts((prev) => prev.map((p) => (p.category === name ? { ...p, category: categories[0] || "" } : p)));
+    // Compute fallback before mutating (avoid stale closure)
+    const remaining = categories.filter((c) => c !== name);
+    const fallback = remaining[0] || "";
+    setCategories(remaining);
+    setProducts((prev) => prev.map((p) => (p.category === name ? { ...p, category: fallback } : p)));
     if (categoryFilter === name) setCategoryFilter("Toutes");
-    if (formData.category === name) setFormData((prev) => ({ ...prev, category: categories[0] || "" }));
+    if (formData.category === name) setFormData((prev) => ({ ...prev, category: fallback }));
   }
 
   function handleCategoryChange(val: string) {
