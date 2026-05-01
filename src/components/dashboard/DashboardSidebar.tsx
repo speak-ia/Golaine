@@ -71,7 +71,7 @@ export default function DashboardSidebar() {
             </div>
             {sidebarOpen && (
               <span className="text-lg font-bold text-gray-900 truncate">
-                Venteo
+                Golaine
               </span>
             )}
           </div>

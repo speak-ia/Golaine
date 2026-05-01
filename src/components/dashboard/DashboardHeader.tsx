@@ -194,7 +194,7 @@ export default function DashboardHeader() {
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-white truncate">Alassane Amadou Diallo</p>
-                  <p className="text-xs text-white/70 truncate">alassane@venteo.sn</p>
+                  <p className="text-xs text-white/70 truncate">alassane@golaine.sn</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 mt-3">

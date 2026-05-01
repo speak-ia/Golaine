@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, Building2, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 
-/* ──────────────────── Venteo Logo ──────────────────── */
-function VenteoLogo({ size = "md" }: { size?: "sm" | "md" }) {
+/* ──────────────────── Golaine Logo ──────────────────── */
+function GolaineLogo({ size = "md" }: { size?: "sm" | "md" }) {
   const iconSize = size === "sm" ? "w-8 h-8" : "w-12 h-12";
   const textSize = size === "sm" ? "text-base" : "text-xl";
   const svgSize = size === "sm" ? 18 : 24;
@@ -29,7 +29,7 @@ function VenteoLogo({ size = "md" }: { size?: "sm" | "md" }) {
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
-      <span className={`${textSize} font-bold text-white`}>Venteo</span>
+      <span className={`${textSize} font-bold text-white`}>Golaine</span>
     </div>
   );
 }
@@ -218,7 +218,7 @@ function SignUpPage() {
         <div className="rounded-2xl bg-[rgb(22,22,22)] border border-white/[0.07] p-8 sm:p-10 shadow-2xl shadow-black/40">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <VenteoLogo size="md" />
+            <GolaineLogo size="md" />
           </div>
 
           {/* Header */}
@@ -362,7 +362,7 @@ function LoginPage() {
         <div className="rounded-2xl bg-[rgb(22,22,22)] border border-white/[0.07] p-8 sm:p-10 shadow-2xl shadow-black/40">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <VenteoLogo size="md" />
+            <GolaineLogo size="md" />
           </div>
 
           {/* Header */}

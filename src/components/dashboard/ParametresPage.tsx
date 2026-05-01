@@ -212,7 +212,7 @@ function StatusBadge({
 
 function ProfilTab() {
   const [name, setName] = useState("Alassane Amadou Diallo");
-  const [email, setEmail] = useState("alassane@venteo.sn");
+  const [email, setEmail] = useState("alassane@golaine.sn");
   const [phone, setPhone] = useState("+221 77 123 45 67");
   const [lang, setLang] = useState("Français");
   const [tz, setTz] = useState("UTC+1 Dakar");
@@ -883,7 +883,7 @@ function IntegrationsTab() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900">API</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Utilisez notre API pour intégrer Venteo dans vos systèmes existants.
+              Utilisez notre API pour intégrer Golaine dans vos systèmes existants.
             </p>
           </div>
         </div>

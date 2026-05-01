@@ -45,7 +45,7 @@ const mockAIResponses = [
 const initialMessages: Message[] = [
   {
     id: "init-1",
-    text: "Bonjour ! 👋 Je suis Sophia, l'assistante de Venteo Boutique. Comment puis-je vous aider aujourd'hui ?",
+    text: "Bonjour ! 👋 Je suis Sophia, l'assistante de Golaine Boutique. Comment puis-je vous aider aujourd'hui ?",
     sender: "agent",
     timestamp: "10:30",
     read: true,
