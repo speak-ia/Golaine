@@ -356,3 +356,23 @@ Stage Summary:
 - View modal features green gradient hero section with stats cards row
 - Delete modal shows contact preview card with avatar before deletion warning
 - All modals follow Commandes page design language with consistent styling
+---
+Task ID: 1
+Agent: Main
+Task: Fix invisible text in modal form fields across all pages
+
+Work Log:
+- Identified root cause: Global CSS `body { color: rgb(241, 245, 249) }` (light text) inherited into white-background form fields inside modals
+- Fixed base shadcn `DialogContent` component to include `text-gray-900` (already had `bg-white`)
+- Fixed base `Input` component: changed `bg-transparent` to `bg-white`, added explicit `text-gray-900`, removed `dark:bg-input/30`
+- Fixed base `Textarea` component: changed `bg-transparent` to `bg-white`, added explicit `text-gray-900`, removed `dark:bg-input/30`
+- Fixed base `SelectTrigger` component: changed `bg-transparent` to `bg-white`, added explicit `text-gray-900`, removed `dark:bg-input/30 dark:hover:bg-input/50`
+- Fixed base `SelectContent` component: changed `bg-popover text-popover-foreground` to `bg-white text-gray-900`
+- Verified all pages: RendezVousPage, MesProduitsPage, ContactsPage, CommandesPage, WhatsAppConnectionPage, MonPlanPage, ParametresPage
+- Ran ESLint: 0 errors
+
+Stage Summary:
+- Root cause fix applied to 5 shadcn base UI components (dialog, input, textarea, select)
+- All modals across all dashboard pages now have properly visible text in form fields
+- ContactsPage and CommandesPage were already using custom CSS with explicit colors (not affected)
+- Files modified: src/components/ui/dialog.tsx, input.tsx, textarea.tsx, select.tsx
