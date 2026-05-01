@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Bell,
   Search,
@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   User,
+  Camera,
 } from "lucide-react";
 import { useAuthStore, type SidebarView } from "@/lib/store";
 
@@ -44,8 +45,26 @@ const pageDescriptions: Record<SidebarView, string> = {
 };
 
 export default function DashboardHeader() {
-  const { sidebarView, setSidebarView, setSidebarOpen, setPageView } = useAuthStore();
+  const { sidebarView, setSidebarView, setSidebarOpen, setPageView, profilePhoto, setProfilePhoto } = useAuthStore();
   const [profileOpen, setProfileOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setProfilePhoto(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }, [setProfilePhoto]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -117,8 +136,12 @@ export default function DashboardHeader() {
               onClick={() => setProfileOpen(!profileOpen)}
               className="flex items-center gap-2 pl-2 cursor-pointer group"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#25D366] to-[#16A34A] flex items-center justify-center text-white font-bold text-xs ring-2 ring-white shadow-sm">
-                AD
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#25D366] to-[#16A34A] flex items-center justify-center text-white font-bold text-xs ring-2 ring-white shadow-sm overflow-hidden relative">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Photo" className="w-full h-full object-cover" />
+                ) : (
+                  "AD"
+                )}
               </div>
               {/* Name + Plan (visible on md+) */}
               <div className="hidden sm:flex flex-col items-start">
@@ -148,9 +171,27 @@ export default function DashboardHeader() {
             {/* User info header */}
             <div className="bg-gradient-to-br from-[#25D366] to-[#16A34A] px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm backdrop-blur-sm">
-                  AD
-                </div>
+                <button
+                  onClick={handlePhotoClick}
+                  className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm backdrop-blur-sm overflow-hidden cursor-pointer group/photo ring-2 ring-white/30"
+                  title="Changer la photo"
+                >
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Photo" className="w-full h-full object-cover" />
+                  ) : (
+                    "AD"
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/40 transition-colors duration-200 flex items-center justify-center">
+                    <Camera className="w-4 h-4 text-white opacity-0 group-hover/photo:opacity-100 transition-opacity duration-200" />
+                  </div>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-white truncate">Alassane Amadou Diallo</p>
                   <p className="text-xs text-white/70 truncate">alassane@venteo.sn</p>
@@ -161,6 +202,14 @@ export default function DashboardHeader() {
                 <span className="text-xs font-semibold text-white/90">Plan Pro</span>
                 <span className="text-[10px] text-white/50 ml-auto">49 000 FCFA/mois</span>
               </div>
+              {profilePhoto && (
+                <button
+                  onClick={() => setProfilePhoto(null)}
+                  className="mt-2.5 w-full text-center text-[11px] font-medium text-white/60 hover:text-white/90 transition-colors cursor-pointer"
+                >
+                  Supprimer la photo
+                </button>
+              )}
             </div>
 
             {/* Menu items */}
