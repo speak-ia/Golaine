@@ -253,3 +253,34 @@ Stage Summary:
   - Unused dependencies in package.json: ~40 packages installed but not used (noted but not removed to avoid breaking potential future features)
 
   **Verification:** `bun run lint` — 0 errors. Dev server running on port 3000.
+
+---
+Task ID: 6
+Agent: Main Orchestrator
+Task: Make product images visible — generate AI images for all 12 mock products
+
+Work Log:
+- Read store.ts and MesProduitsPage.tsx to understand image handling
+- All 12 INITIAL_PRODUCTS had `image: ""` (empty), showing only placeholder icons
+- Created `/public/products/` directory
+- Generated 12 professional product photography images using AI image generation (z-ai CLI):
+  1. `/products/robe-wax.png` — Robe Wax S-400 (Mode)
+  2. `/products/pagne-tisse.png` — Pagne Tissé Premium (Textile)
+  3. `/products/bissap.png` — Bissap 1L (Alimentation)
+  4. `/products/huile-argan.png` — Huile d'Argan Bio (Beauté)
+  5. `/products/sac-dakar.png` — Sac À Main Dakar (Accessoires)
+  6. `/products/thiakry.png` — Thiakry Nature (Alimentation)
+  7. `/products/collier.png` — Collier Traditionnel (Accessoires)
+  8. `/products/baobab-powder.png` — Baobab Fruit Powder (Alimentation)
+  9. `/products/tunique-boubou.png` — Tunique Boubou (Mode)
+  10. `/products/savon-noir.png` — Savon Noir Naturel (Beauté)
+  11. `/products/bijoux-mauritanien.png` — Bijoux Mauritanien (Accessoires)
+  12. `/products/cafe-touba.png` — Café Touba 500g (Alimentation)
+- Updated store.ts INITIAL_PRODUCTS array with corresponding `/products/*.png` paths
+- CSP img-src already allows 'self' so local images load correctly
+- Dev server restarted, compiles successfully
+
+Stage Summary:
+- 12 AI-generated product images saved to `/public/products/`
+- All 12 mock products now have visible images in both grid and list views
+- No code changes needed in MesProduitsPage.tsx — it already supported URL-based images
