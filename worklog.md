@@ -160,3 +160,44 @@ Work Log:
 
 Stage Summary:
 - 3 logic issues fixed in WhatsAppConnectionPage.tsx
+
+---
+Task ID: 4
+Agent: Main Orchestrator (security audit session)
+Task: Apply security audit fixes — items 5, 6, 7, 8, 16 (applicable without backend)
+
+Work Log:
+- Read all project source files to identify security issues
+- Applied 5 security fixes as requested:
+
+**Item 5: Hardcoded phone numbers exposed in source**
+- `src/lib/store.ts`: Masked phone `"+221 76 028 96 07"` → `"+221 76 *** ** 07"`
+- `src/components/dashboard/ParametresPage.tsx`: Masked phone in ProfilTab and IntegrationsTab
+
+**Item 6: Mock API key exposed in client bundle**
+- `src/components/dashboard/ParametresPage.tsx`: Changed `"sk-golaine-a1b2c3d4e5f6g7h8i9j0"` → `"sk-golaine-****...****-a1b2"`
+
+**Item 7: Insecure cookie without security flags**
+- `src/components/ui/sidebar.tsx`: Added `SameSite=Strict; Secure` to sidebar cookie
+
+**Item 8: Missing security headers**
+- `next.config.ts`: Added comprehensive security headers via `headers()` config:
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
+  - `Content-Security-Policy` with strict directives (default-src 'self', frame-ancestors 'none', etc.)
+
+**Item 16: Deprecated `document.execCommand("copy")`**
+- `src/components/dashboard/ParametresPage.tsx`: Replaced deprecated fallback with modern `async/await navigator.clipboard.writeText()` pattern. Removed `document.createElement("textarea")` + `document.execCommand("copy")` hack.
+
+- Verified: `bun run lint` passes with 0 errors
+- Dev server restarted automatically and compiles successfully
+
+Stage Summary:
+- 5 security fixes applied across 4 files (store.ts, ParametresPage.tsx, sidebar.tsx, next.config.ts)
+- All phone numbers and API keys now masked in source code
+- Cookie hardened with SameSite=Strict + Secure flags
+- Full security header stack added via Next.js config
+- Deprecated clipboard API removed in favor of modern async pattern

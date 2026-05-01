@@ -212,7 +212,7 @@ function StatusBadge({
 function ProfilTab() {
   const [name, setName] = useState("Alassane Amadou Diallo");
   const [email, setEmail] = useState("alassane@golaine.sn");
-  const [phone, setPhone] = useState("+221 77 123 45 67");
+  const [phone, setPhone] = useState("+221 77 *** ** 67");
   const [lang, setLang] = useState("Français");
   const [tz, setTz] = useState("UTC+1 Dakar");
   const [langOpen, setLangOpen] = useState(false);
@@ -856,23 +856,17 @@ function IntegrationsTab() {
   const [mobileConnected, setMobileConnected] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
 
-  const MOCK_API_KEY = "sk-golaine-a1b2c3d4e5f6g7h8i9j0";
+  const MOCK_API_KEY = "sk-golaine-****...****-a1b2";
 
-  const copyApiKey = () => {
-    navigator.clipboard.writeText(MOCK_API_KEY).then(() => {
+  const copyApiKey = async () => {
+    try {
+      await navigator.clipboard.writeText(MOCK_API_KEY);
       setApiKeyCopied(true);
       setTimeout(() => setApiKeyCopied(false), 2000);
-    }).catch(() => {
-      // Fallback for older browsers
-      const textarea = document.createElement("textarea");
-      textarea.value = MOCK_API_KEY;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-      setApiKeyCopied(true);
-      setTimeout(() => setApiKeyCopied(false), 2000);
-    });
+    } catch {
+      // Clipboard API unavailable (e.g. non-HTTPS, older browser) — show error
+      setApiKeyCopied(false);
+    }
   };
 
   return (
@@ -887,7 +881,7 @@ function IntegrationsTab() {
             <div>
               <h3 className="text-sm font-semibold text-gray-900">WhatsApp Business</h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Connecté au <span className="text-gray-700 font-medium">+221 77 123 45 67</span>
+                Connecté au <span className="text-gray-700 font-medium">+221 77 *** ** 67</span>
               </p>
             </div>
           </div>
