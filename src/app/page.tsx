@@ -18,9 +18,6 @@ import {
   Signal,
   Clock,
   Star,
-  Zap,
-  ShoppingBag,
-  RefreshCw,
   TrendingUp,
   Headphones,
 } from "lucide-react";
@@ -69,12 +66,25 @@ function Navbar() {
   const [currency, setCurrency] = useState("F CFA");
   const { pageView, setPageView } = useAuthStore();
   const currencies = ["$ USD", "€ EUR", "F CFA", "UM"];
+  const currencyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close currency dropdown on outside click
+  useEffect(() => {
+    if (!currencyOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (currencyRef.current && !currencyRef.current.contains(e.target as Node)) {
+        setCurrencyOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [currencyOpen]);
 
   const navLinks = [
     { label: "Fonctionnalités", href: "#features" },
@@ -130,7 +140,7 @@ function Navbar() {
           {/* Desktop Right */}
           <div className="hidden md:flex items-center gap-4">
             {/* Currency Selector */}
-            <div className="relative">
+            <div className="relative" ref={currencyRef}>
               <button
                 onClick={() => setCurrencyOpen(!currencyOpen)}
                 className="flex items-center gap-1.5 text-sm text-[rgb(148,163,184)] hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
@@ -718,15 +728,18 @@ function DemoVideoSection() {
           <div className="relative rounded-2xl overflow-hidden border border-white/[0.1] shadow-2xl shadow-black/50">
             {/* Video glow */}
             <div className="absolute -inset-1 bg-[rgb(37,211,102)]/[0.06] rounded-2xl blur-xl -z-10" />
-            <div className="relative w-full aspect-video bg-[rgb(22,22,22)]">
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Golaine Demo"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+            <div className="relative w-full aspect-video bg-[rgb(22,22,22)] flex flex-col items-center justify-center">
+              {/* Play button */}
+              <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 hover:bg-white/15 transition-colors cursor-pointer group mb-6">
+                <Play className="w-8 h-8 text-white group-hover:scale-110 transition-transform ml-1" />
+              </div>
+              <p className="text-xl font-bold text-white mb-2">Vidéo de démonstration</p>
+              <p className="text-sm text-[rgb(148,163,184)] max-w-md text-center">
+                Découvrez comment Golaine transforme chaque conversation en vente en 2 minutes.
+              </p>
+              <p className="text-xs text-[rgb(100,116,139)] mt-4">
+                Vidéo bientôt disponible
+              </p>
             </div>
           </div>
         </FadeIn>

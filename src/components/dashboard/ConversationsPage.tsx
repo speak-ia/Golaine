@@ -142,6 +142,7 @@ const avatarGradients: Record<string, string> = {
   MC: "from-fuchsia-500 to-pink-600",
   CS: "from-indigo-500 to-violet-600",
   BD: "from-lime-500 to-green-600",
+  FD2: "from-yellow-500 to-amber-600",
 };
 
 /* ═══════════════════════════════════════════════════════════════

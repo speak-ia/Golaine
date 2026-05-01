@@ -580,11 +580,12 @@ export default function ContactsPage() {
   }, [contacts, searchQuery, segmentFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredContacts.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
 
   const paginatedContacts = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
     return filteredContacts.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredContacts, currentPage]);
+  }, [filteredContacts, safePage]);
 
   // Reset page when filters change
   const handleSearchChange = (value: string) => {
@@ -615,6 +616,10 @@ export default function ContactsPage() {
   const handleDelete = () => {
     if (!selectedContact) return;
     setContacts((prev) => prev.filter((c) => c.id !== selectedContact.id));
+    // Auto-correct page when last item on last page is deleted
+    const remaining = contacts.filter((c) => c.id !== selectedContact.id);
+    const newTotal = Math.max(1, Math.ceil(remaining.length / ITEMS_PER_PAGE));
+    if (currentPage > newTotal) setCurrentPage(newTotal);
     closeModal();
   };
 
@@ -848,11 +853,11 @@ export default function ContactsPage() {
           <p className="text-sm text-gray-500">
             Affichage de{" "}
             <span className="font-medium text-gray-700">
-              {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+              {(safePage - 1) * ITEMS_PER_PAGE + 1}
             </span>{" "}
             à{" "}
             <span className="font-medium text-gray-700">
-              {Math.min(currentPage * ITEMS_PER_PAGE, filteredContacts.length)}
+              {Math.min(safePage * ITEMS_PER_PAGE, filteredContacts.length)}
             </span>{" "}
             sur{" "}
             <span className="font-medium text-gray-700">
@@ -864,7 +869,7 @@ export default function ContactsPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              disabled={safePage === 1}
               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -875,7 +880,7 @@ export default function ContactsPage() {
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                  currentPage === page
+                  safePage === page
                     ? "bg-[#25D366] text-white shadow-sm"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
@@ -886,7 +891,7 @@ export default function ContactsPage() {
 
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              disabled={safePage === totalPages}
               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               <ChevronRight className="w-4 h-4 text-gray-600" />
