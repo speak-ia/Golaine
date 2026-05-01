@@ -1480,6 +1480,37 @@ export default function MesProduitsPage() {
           </DialogContent>
         </DialogPortal>
       </Dialog>
+
+      {/* ── Category Management Modal ── */}
+      <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogContent className="sm:max-w-md rounded-2xl p-6 border-gray-200 text-gray-900">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-xl bg-[#E8F8EF] flex items-center justify-center flex-shrink-0">
+                  <Tag className="w-5 h-5 text-[#16A34A]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-bold text-gray-900">
+                    Gérer les catégories
+                  </DialogTitle>
+                </div>
+              </div>
+              <DialogDescription className="text-sm text-gray-500 !mt-2">
+                Ajoutez, renommez ou supprimez les catégories de produits.
+                Les produits d'une catégorie supprimée seront déplacés vers la première catégorie disponible.
+              </DialogDescription>
+            </DialogHeader>
+            <CategoryManager
+              categories={categories}
+              onAdd={handleAddCategory}
+              onRename={handleRenameCategory}
+              onDelete={handleDeleteCategory}
+            />
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 }

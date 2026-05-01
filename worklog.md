@@ -376,3 +376,21 @@ Stage Summary:
 - All modals across all dashboard pages now have properly visible text in form fields
 - ContactsPage and CommandesPage were already using custom CSS with explicit colors (not affected)
 - Files modified: src/components/ui/dialog.tsx, input.tsx, textarea.tsx, select.tsx
+
+---
+Task ID: 7
+Agent: Main
+Task: Add category CRUD management to Mes Produits page
+
+Work Log:
+- Identified that CategoryManager component and handlers already existed but the Dialog modal was missing from the JSX
+- Added Category Management Modal Dialog with professional header (green icon, title, description)
+- Modal includes: add new category input + button, editable list with rename/delete per category, product count warning on delete
+- Category CRUD is fully wired: add appends to array, rename updates categories + products + filters, delete reassigns products to first available category
+- "Catégories" button in page header (already existed) now properly opens the modal with category count badge
+- Zero ESLint errors, dev server compiles and serves 200
+
+Stage Summary:
+- File modified: src/components/dashboard/MesProduitsPage.tsx (added 31 lines: category modal Dialog)
+- Users can now: click "Catégories" button → modal opens → add/rename/delete categories
+- Categories are dynamic (useState) and fully synced with product forms and filters
