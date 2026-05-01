@@ -883,6 +883,7 @@ export default function MesProduitsPage() {
         <DialogPortal>
           <DialogOverlay />
           <DialogContent className="sm:max-w-lg rounded-2xl p-0 border-gray-200 text-gray-900 overflow-hidden">
+            <DialogTitle className="sr-only">Détails du produit</DialogTitle>
             {viewingProduct && (
               <>
                 {/* Image header */}
