@@ -87,23 +87,6 @@ export default function DashboardSidebar() {
           </button>
         </div>
 
-        {/* User profile */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#25D366] to-[#16A34A] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-              AD
-            </div>
-            {sidebarOpen && (
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  Alassane Amadou Diallo
-                </p>
-                <p className="text-xs text-gray-500 truncate">Plan Pro</p>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Menu label */}
         {sidebarOpen && (
           <div className="px-4 pt-4 pb-1">
