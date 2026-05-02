@@ -27,6 +27,10 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
+import { FeedbackBanner } from "@/components/common/FeedbackBanner";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { ToggleSwitch } from "@/components/common/ToggleSwitch";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -49,161 +53,9 @@ const TABS: Tab[] = [
   { id: "facturation", label: "Facturation", icon: CreditCard },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   TOGGLE SWITCH
-   ═══════════════════════════════════════════════════════════════ */
+/* Note: ToggleSwitch extrait en composant réutilisable */
 
-function ToggleSwitch({
-  enabled,
-  onToggle,
-}: {
-  enabled: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
-        enabled ? "bg-[#25D366]" : "bg-gray-300"
-      }`}
-      role="switch"
-      aria-checked={enabled}
-    >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          enabled ? "translate-x-6" : "translate-x-1"
-        }`}
-      />
-    </button>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   CONFIRM MODAL
-   ═══════════════════════════════════════════════════════════════ */
-
-function ConfirmModal({
-  open,
-  title,
-  message,
-  confirmLabel,
-  confirmVariant,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  confirmVariant: "danger" | "warning";
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div className="relative bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <div
-            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              confirmVariant === "danger"
-                ? "bg-red-50"
-                : "bg-amber-50"
-            }`}
-          >
-            <AlertTriangle
-              className={`w-5 h-5 ${
-                confirmVariant === "danger"
-                  ? "text-red-500"
-                  : "text-amber-500"
-              }`}
-            />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        </div>
-        <p className="text-sm text-gray-600 mb-6">{message}</p>
-        <div className="flex items-center gap-3 justify-end">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors cursor-pointer ${
-              confirmVariant === "danger"
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-amber-500 hover:bg-amber-600"
-            }`}
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   SUCCESS / ERROR BANNER
-   ═══════════════════════════════════════════════════════════════ */
-
-function FeedbackBanner({
-  type,
-  message,
-  onDismiss,
-}: {
-  type: "success" | "error";
-  message: string;
-  onDismiss: () => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 p-4 rounded-xl mb-4 ${
-        type === "success"
-          ? "bg-[#E8F8EF] text-[#16A34A]"
-          : "bg-red-50 text-red-600"
-      }`}
-    >
-      <Check className="w-5 h-5 flex-shrink-0" />
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button onClick={onDismiss} className="cursor-pointer hover:opacity-70">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   STATUS BADGE
-   ═══════════════════════════════════════════════════════════════ */
-
-function StatusBadge({
-  label,
-  variant,
-}: {
-  label: string;
-  variant: "success" | "danger" | "neutral";
-}) {
-  const colors = {
-    success: "bg-[#E8F8EF] text-[#16A34A]",
-    danger: "bg-red-50 text-red-600",
-    neutral: "bg-gray-100 text-gray-600",
-  };
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[variant]}`}
-    >
-      {label}
-    </span>
-  );
-}
+/* Note: ConfirmModal / FeedbackBanner / StatusBadge extraits en composants réutilisables */
 
 /* ═══════════════════════════════════════════════════════════════
    TAB 1 — PROFIL

@@ -18,6 +18,7 @@ import {
   Shield,
   Clock,
 } from "lucide-react";
+import { ToggleSwitch } from "@/components/common/ToggleSwitch";
 
 /* ──────────────────── Types ──────────────────── */
 type TabSlot = {
@@ -98,41 +99,7 @@ const languages = [
   { value: "ar", label: "العربية" },
 ];
 
-/* ──────────────────── Toggle Switch ──────────────────── */
-function Toggle({
-  checked,
-  onChange,
-  size = "md",
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  size?: "sm" | "md";
-}) {
-  const sizes = {
-    sm: { track: "w-9 h-5", thumb: "w-3.5 h-3.5", translate: "translate-x-4" },
-    md: { track: "w-11 h-6", thumb: "w-4.5 h-4.5", translate: "translate-x-5" },
-  };
-  const s = sizes[size];
-
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex items-center rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22c55e]/40 cursor-pointer ${
-        s.track
-      } ${checked ? "bg-[#22c55e]" : "bg-gray-200"}`}
-    >
-      <span
-        className={`inline-block rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          s.thumb
-        } ${checked ? s.translate : "translate-x-0.5"}`}
-        style={{ width: size === "sm" ? 14 : 18, height: size === "sm" ? 14 : 18 }}
-      />
-    </button>
-  );
-}
+/* Note: Toggle extrait en ToggleSwitch réutilisable */
 
 /* ──────────────────── Tab Content Sections ──────────────────── */
 type SectionTab = "general" | "messages" | "horaires" | "avance";
@@ -536,9 +503,9 @@ export default function AgentIAPage() {
                     </p>
                   </div>
                 </div>
-                <Toggle
-                  checked={config.autoResponse}
-                  onChange={(v) => update("autoResponse", v)}
+                <ToggleSwitch
+                  enabled={config.autoResponse}
+                  onToggle={() => update("autoResponse", !config.autoResponse)}
                 />
               </div>
             </div>
@@ -560,9 +527,9 @@ export default function AgentIAPage() {
                     </p>
                   </div>
                 </div>
-                <Toggle
-                  checked={config.workingHours}
-                  onChange={(v) => update("workingHours", v)}
+                <ToggleSwitch
+                  enabled={config.workingHours}
+                  onToggle={() => update("workingHours", !config.workingHours)}
                 />
               </div>
 
@@ -646,9 +613,9 @@ export default function AgentIAPage() {
                     </p>
                   </div>
                 </div>
-                <Toggle
-                  checked={config.fallbackToHuman}
-                  onChange={(v) => update("fallbackToHuman", v)}
+                <ToggleSwitch
+                  enabled={config.fallbackToHuman}
+                  onToggle={() => update("fallbackToHuman", !config.fallbackToHuman)}
                 />
               </div>
 

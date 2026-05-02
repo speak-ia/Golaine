@@ -77,10 +77,12 @@ interface AuthStore {
   sidebarView: SidebarView;
   sidebarOpen: boolean;
   profilePhoto: string | null;
+  planIntent: "Starter" | "Pro" | "Business" | null;
   setPageView: (view: PageView) => void;
   setSidebarView: (view: SidebarView) => void;
   setSidebarOpen: (open: boolean) => void;
   setProfilePhoto: (photo: string | null) => void;
+  setPlanIntent: (plan: AuthStore["planIntent"]) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -88,10 +90,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
   sidebarView: "dashboard",
   sidebarOpen: true,
   profilePhoto: null,
+  planIntent: null,
   setPageView: (view) => set({ pageView: view }),
   setSidebarView: (view) => set({ sidebarView: view }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setProfilePhoto: (photo) => set({ profilePhoto: photo }),
+  setPlanIntent: (planIntent) => set({ planIntent }),
 }));
 
 /* ═══════════════════════════════════════════════════════════════

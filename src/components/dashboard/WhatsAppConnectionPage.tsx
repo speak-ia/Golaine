@@ -16,6 +16,7 @@ import {
   User,
   ArrowRight,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
 
 /* ──────────────────── Feature Badge ──────────────────── */
 function FeatureBadge({
@@ -429,6 +430,8 @@ export default function WhatsAppConnectionPage() {
     { name: "Numéro 3", phone: null, status: "locked" },
   ]);
   const [showToast, setShowToast] = useState<string | null>(null);
+  const setSidebarView = useAuthStore((s) => s.setSidebarView);
+  const setPlanIntent = useAuthStore((s) => s.setPlanIntent);
 
   const handleConnect = (index: number) => {
     setShowQR(index);
@@ -464,7 +467,9 @@ export default function WhatsAppConnectionPage() {
 
   const handleUpgrade = () => {
     setShowToast("Redirection vers le plan Business...");
-    setTimeout(() => setShowToast(null), 3000);
+    setPlanIntent("Business");
+    setSidebarView("plan");
+    setTimeout(() => setShowToast(null), 1200);
   };
 
   const connectedCount = slots.filter((s) => s.status === "connected").length;

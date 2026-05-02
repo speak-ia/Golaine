@@ -108,6 +108,7 @@ const Navbar = React.memo(function Navbar() {
 
   return (
     <nav
+      suppressHydrationWarning
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-[rgb(10,10,10)]/90 backdrop-blur-xl border-b border-white/[0.07]"
@@ -1331,7 +1332,10 @@ function Footer() {
 /* ──────────────────── MAIN PAGE ──────────────────── */
 const LandingPage = React.memo(function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[rgb(10,10,10)]">
+    <div
+      suppressHydrationWarning
+      className="min-h-screen flex flex-col bg-[rgb(10,10,10)]"
+    >
       <Navbar />
       <main className="flex-1">
         <HeroSection />
