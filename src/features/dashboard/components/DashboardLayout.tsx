@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-[#F9FAFB]">
+      <div className="dashboard-light flex h-screen bg-[#F9FAFB] text-neutral-900 antialiased">
         <DashboardSidebar />
 
         <div

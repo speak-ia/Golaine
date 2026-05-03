@@ -123,7 +123,7 @@ function QRCodeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -329,7 +329,7 @@ function NumberSlotCard({
 
   return (
     <div
-      className={`relative bg-white rounded-2xl border overflow-hidden transition-shadow duration-200 hover:shadow-lg ${
+      className={`relative rounded-2xl border bg-white text-neutral-900 overflow-hidden transition-shadow duration-200 hover:shadow-lg ${
         isActive ? "border-[#25D366]/30 shadow-sm" : isLocked ? "border-gray-200 opacity-75" : "border-gray-200 shadow-sm"
       }`}
     >
@@ -479,7 +479,7 @@ export default function WhatsAppPage() {
   const connectedCount = slots.filter((s) => s.status === "connected").length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-neutral-900">
       {/* Toast */}
       {showToast && (
         <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-right duration-300">
@@ -532,7 +532,7 @@ export default function WhatsAppPage() {
       </div>
 
       {/* Usage info */}
-      <div className="rounded-2xl border border-brand/20 bg-gradient-to-r from-brand-tint to-brand-soft p-5">
+      <div className="rounded-2xl border border-brand/20 bg-gradient-to-r from-brand-tint to-brand-soft p-5 text-neutral-900">
         <div className="flex items-start gap-3">
           <Shield className="mt-0.5 h-5 w-5 shrink-0 text-brand-dark" />
           <div>

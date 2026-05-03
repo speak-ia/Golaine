@@ -37,6 +37,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Marque Golaine / WhatsApp — requis ici (Tailwind v4 : @theme ; tailwind.config.ts seul ne suffit pas) */
+  --color-brand: #25d366;
+  --color-brand-dark: #16a34a;
+  --color-brand-tint: #e8f8ef;
+  --color-brand-soft: #f0fdf4;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -203,6 +208,11 @@ body {
 
 .dashboard-light ::-webkit-scrollbar-thumb:hover {
   background: rgb(156, 163, 175);
+}
+
+/* Texte lisible sur fond clair : le body reste en thème sombre (couleur claire héritée) */
+.dashboard-light {
+  color: rgb(23 23 23);
 }
 
 /* ──────────────────── Phone Frame Styles (TesterAgentPage) ──────────────────── */
