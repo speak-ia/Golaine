@@ -107,7 +107,7 @@ function ContactViewContent({ contact }: { contact: Contact }) {
         <StatusPill segment={contact.segment} label={contact.segment} size="sm" className="shrink-0" />
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         <div className="rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-3.5 text-center transition-shadow hover:shadow-sm">
           <p className="text-lg font-bold text-gray-900">{contact.orders}</p>
           <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Commandes</p>

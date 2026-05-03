@@ -11,17 +11,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="dashboard-light flex h-screen bg-[#F9FAFB] text-neutral-900 antialiased">
-        <DashboardSidebar />
+      <div className="dashboard-light flex h-[100dvh] max-h-[100dvh] min-h-0 w-full overflow-x-clip bg-[#F9FAFB] text-neutral-900 antialiased sm:h-screen sm:max-h-none">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-row">
+          <DashboardSidebar />
 
-        <div
-          className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ease-in-out ${
-            sidebarOpen ? "lg:ml-64" : "lg:ml-20"
-          }`}
-        >
-          <DashboardHeader />
+          <div
+            className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip transition-all duration-300 ease-in-out ${
+              sidebarOpen ? "lg:ml-64" : "lg:ml-20"
+            }`}
+          >
+            <DashboardHeader />
 
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+            <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-clip p-3 sm:p-6">
+              {children}
+            </main>
+          </div>
         </div>
       </div>
     </AuthGuard>

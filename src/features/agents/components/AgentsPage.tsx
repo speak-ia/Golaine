@@ -646,7 +646,7 @@ export default function AgentsPage() {
               {/* Stats Card */}
               <div className="space-y-3">
                 <p className="text-sm font-medium text-gray-700">Statistiques de l&apos;agent</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[
                     { label: "Messages traités", value: "1 247", color: "text-[#22c55e]" },
                     { label: "Taux de résolution", value: "94%", color: "text-[#22c55e]" },

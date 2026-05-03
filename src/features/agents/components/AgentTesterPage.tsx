@@ -208,9 +208,9 @@ export default function AgentTesterPage() {
       </div>
 
       {/* ── Phone Mockup Container ── */}
-      <div className="flex-1 flex items-center justify-center py-4">
-        {/* ── Phone Mockup ── */}
-        <div className="relative flex-shrink-0">
+      <div className="flex flex-1 items-center justify-center overflow-x-auto px-2 py-4 sm:px-4">
+        {/* ── Phone Mockup (réduit sur très petits écrans pour éviter le débordement) ── */}
+        <div className="relative max-w-[min(100vw-1rem,340px)] origin-top scale-[0.88] transition-transform sm:scale-100">
           <div className="phone-frame">
             <div className="phone-screen">
               {/* Notch */}

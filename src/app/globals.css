@@ -85,12 +85,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   background: rgb(10, 10, 10);
   color: rgb(241, 245, 249);
+  overflow-x: clip;
 }
 
 /* Typing indicator animation */
@@ -213,6 +215,102 @@ body {
 /* Texte lisible sur fond clair : le body reste en thème sombre (couleur claire héritée) */
 .dashboard-light {
   color: rgb(23 23 23);
+}
+
+/* ──────────────────── Landing (section témoignages type Ricash) ──────────────────── */
+
+.section-y {
+  padding-block: 5rem;
+}
+
+@media (min-width: 768px) {
+  .section-y {
+    padding-block: 7rem;
+  }
+}
+
+.container-default {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-default {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-default {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.sh-title .line {
+  display: block;
+  text-align: center;
+  width: 100%;
+}
+
+.glossy-card {
+  overflow: hidden;
+}
+
+.glossy-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 40px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 45%,
+    transparent 100%
+  );
+}
+
+.mask-edges {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 4%,
+    black 96%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 4%,
+    black 96%,
+    transparent
+  );
+}
+
+/* Déplacement = largeur 1ère rangée + gap (défini en JS via --marquee-shift) */
+@keyframes landing-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-1 * var(--marquee-shift, 1520px)));
+  }
+}
+
+.landing-marquee-track {
+  animation: landing-marquee-scroll 45s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-marquee-track {
+    animation: none;
+  }
 }
 
 /* ──────────────────── Phone Frame Styles (TesterAgentPage) ──────────────────── */

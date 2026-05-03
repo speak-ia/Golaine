@@ -23,7 +23,7 @@ const OrdersSummary = () => (
     </div>
     <p className="text-3xl font-bold text-white">50 000F</p>
     <p className="mt-2 text-sm font-medium text-brand">Confirmées + livrées</p>
-    <div className="mt-4 flex items-center gap-4 border-t border-white/10 pt-4">
+    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-4">
       <div>
         <p className="text-xs text-gray-400">Total</p>
         <p className="text-sm font-semibold text-white">2 commandes</p>
@@ -130,7 +130,7 @@ const RecentActivity = () => {
 export default function DashboardHome() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Contacts"
           value="1"

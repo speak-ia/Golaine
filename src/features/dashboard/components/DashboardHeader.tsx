@@ -71,24 +71,27 @@ export default function DashboardHeader() {
   return (
     <>
       <header className="border-b border-gray-200 bg-brand-soft">
-        <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex min-w-0 items-center justify-between gap-2 px-4 py-4 sm:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <button
+              type="button"
               onClick={() => setSidebarOpen(true)}
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-white/80 lg:hidden"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-white/80 lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div>
-              <h1 className="text-base font-bold tracking-wide text-brand-dark sm:text-lg">
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-bold tracking-wide text-brand-dark sm:text-lg">
                 {pageTitles[sidebarView]}
               </h1>
-              <p className="mt-0.5 text-xs text-gray-600 sm:text-sm">{pageDescriptions[sidebarView]}</p>
+              <p className="mt-0.5 line-clamp-2 text-[11px] text-gray-600 sm:line-clamp-1 sm:text-sm">
+                {pageDescriptions[sidebarView]}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 md:flex">
               <div className="h-2 w-2 animate-pulse rounded-full bg-brand" />
               <span className="text-[11px] font-medium text-gray-600">Agent actif</span>
@@ -136,7 +139,7 @@ export default function DashboardHeader() {
       {profileOpen && (
         <>
           <div className="fixed inset-0 z-[9999]" onClick={() => setProfileOpen(false)} />
-          <div className="animate-in fade-in slide-in-from-top-2 absolute right-4 top-[72px] z-[10000] w-72 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/50 duration-200 sm:right-6">
+          <div className="animate-in fade-in slide-in-from-top-2 absolute right-4 top-[72px] z-[10000] w-[min(18rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/50 duration-200 sm:right-6 sm:w-72 sm:max-w-none">
             <div className="bg-gradient-to-br from-brand to-brand-dark px-5 py-4">
               <div className="flex items-center gap-3">
                 <button

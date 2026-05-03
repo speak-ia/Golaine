@@ -125,15 +125,17 @@ function MiniCalendar({
   const todayKey = toDateKey(new Date());
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-gray-100">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">
           {MONTHS_FR_CAP[month]} {year}
         </h3>
       </div>
 
-      {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="min-w-[280px]">
+          {/* Day headers */}
+          <div className="mb-1 grid grid-cols-7 gap-1">
         {DAYS_FR_SHORT.map((day) => (
           <div
             key={day}
@@ -182,6 +184,8 @@ function MiniCalendar({
             </button>
           );
         })}
+      </div>
+        </div>
       </div>
     </div>
   );

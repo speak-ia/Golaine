@@ -175,7 +175,7 @@ function StatsBar({ totalMessages, activeCount }: { totalMessages: number; activ
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-xl mb-3">
+    <div className="mb-3 grid grid-cols-3 gap-1.5 rounded-xl bg-gray-50 p-2 sm:gap-2 sm:p-3">
       {stats.map((stat) => (
         <div key={stat.label} className="flex flex-col items-center gap-1 py-1.5">
           <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center`}>

@@ -373,7 +373,7 @@ function ProductForm({
       </div>
 
       {/* Prix & Stock row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="prod-price" className="text-gray-700">
             Prix (FCFA)
@@ -922,7 +922,7 @@ export default function ProductsPage() {
       />
 
       {/* ── Stats Row ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard variant="compact" icon={Package} label="Total produits" value={stats.totalProducts} iconColor="#8B5CF6" iconBg="#F3F0FF" />
         <StatCard variant="compact" icon={TrendingUp} label="Produits actifs" value={stats.activeProducts} iconColor="#16A34A" iconBg="#E8F8EF" />
         <StatCard variant="compact" icon={AlertTriangle} label="Stock faible" value={stats.lowStock} iconColor="#F97316" iconBg="#FFF7ED" />
@@ -938,7 +938,7 @@ export default function ProductsPage() {
         />
         <div className="flex items-center gap-2">
           <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[160px] h-10">
+            <SelectTrigger className="h-10 w-full min-w-0 sm:w-[160px]">
               <SelectValue placeholder="Catégorie" />
             </SelectTrigger>
             <SelectContent className="bg-white text-gray-900 border-gray-200">
@@ -951,7 +951,7 @@ export default function ProductsPage() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-[160px] h-10">
+            <SelectTrigger className="h-10 w-full min-w-0 sm:w-[160px]">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
             <SelectContent className="bg-white text-gray-900 border-gray-200">
@@ -1117,8 +1117,8 @@ export default function ProductsPage() {
                 <h3 className="text-lg font-bold text-gray-900">{viewingProduct.name}</h3>
                 <p className="text-xl font-bold text-brand-dark mt-1">{formatFCFA(viewingProduct.price)}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-gray-50">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-gray-50 p-3">
                   <p className="text-xs text-gray-500">Catégorie</p>
                   <p className="text-sm font-semibold text-gray-900">{viewingProduct.category}</p>
                 </div>

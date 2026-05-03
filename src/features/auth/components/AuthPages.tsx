@@ -207,7 +207,7 @@ function SignUpPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen flex items-center justify-center px-4 py-12 relative"
+      className="relative flex min-h-screen items-center justify-center overflow-x-clip px-4 py-12"
     >
       {/* Background gradient orbs */}
       <div className="absolute top-1/4 -left-32 w-[400px] h-[400px] rounded-full bg-[rgb(37,211,102)]/[0.06] blur-[120px]" />
@@ -377,7 +377,7 @@ function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="min-h-screen flex items-center justify-center px-4 py-12 relative"
+      className="relative flex min-h-screen items-center justify-center overflow-x-clip px-4 py-12"
     >
       {/* Background gradient orbs */}
       <div className="absolute top-1/3 -left-32 w-[400px] h-[400px] rounded-full bg-[rgb(37,211,102)]/[0.06] blur-[120px]" />

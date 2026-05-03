@@ -142,7 +142,7 @@ function OrderEditBody({
             placeholder="Adresse complète"
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label>Montant (FCFA)</Label>
             <Input type="number" className="mt-1" value={montant} onChange={(e) => setMontant(e.target.value)} />
@@ -255,20 +255,20 @@ export default function OrdersPage() {
           Chargement des commandes…
         </div>
       ) : null}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-[22px] font-bold text-gray-900 leading-tight tracking-tight">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-gray-900">
             Commandes & Ventes
           </h1>
           <p className="text-[13px] text-gray-500 mt-1">Suivi de vos ventes et commandes clients</p>
         </div>
-        <Button className="bg-brand hover:bg-brand-dark text-white font-semibold gap-2 shadow-sm cursor-pointer">
+        <Button className="w-full shrink-0 cursor-pointer gap-2 bg-brand font-semibold text-white shadow-sm hover:bg-brand-dark sm:w-auto">
           <Plus className="w-4 h-4" strokeWidth={2.5} />
           Nouvelle commande
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard
             key={stat.label}

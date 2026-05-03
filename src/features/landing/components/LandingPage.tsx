@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { useClickOutside } from "@shared/hooks/useClickOutside";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
@@ -23,6 +29,7 @@ import {
   Headphones,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { BrandLogo } from "@shared/components/feedback/BrandLogo";
 
 /* ──────────────────── Animation wrapper ──────────────────── */
@@ -876,78 +883,158 @@ function TestimonialsSection() {
   const testimonials = [
     {
       quote:
-        "Golaine a transformé ma boutique. Je ne rate plus aucune commande, même la nuit. Mon chiffre d'affaires a augmenté de 45% en 3 mois.",
-      name: "Fatou Diallo",
-      business: "Boutique mode en ligne — Dakar",
-      initials: "FD",
-      color: "bg-[rgb(37,211,102)]",
+        "La plateforme web Ricash a révolutionné la gestion de ma petite entreprise. Interface intuitive et sécurisée !",
+      name: "Amadou Diallo",
+      role: "Entrepreneur, Dakar",
+      image: "/images/entrepreneur.png",
+      imageAlt: "Amadou Diallo",
     },
     {
       quote:
-        "L'IA comprend parfaitement mes produits et mes clients sont impressionnés. C'est comme avoir un vendeur qui ne dort jamais.",
-      name: "Moussa Traoré",
-      business: "Agro-alimentaire — Abidjan",
-      initials: "MT",
-      color: "bg-[rgb(124,58,237)]",
+        "L'application mobile Ricash est mon partenaire quotidien ! Simple et rapide !",
+      name: "Aissata Ouidad",
+      role: "Étudiante, Bamako",
+      image: "/images/aissata.png",
+      imageAlt: "Aissata Ouidad",
     },
     {
       quote:
-        "L'installation a pris moins de 5 minutes et les résultats sont immédiats. Je recommande Golaine à tous les commerçants.",
-      name: "Aminata Sow",
-      business: "Cosmétiques naturels — Lomé",
-      initials: "AS",
-      color: "bg-[rgb(14,165,233)]",
+        "Cash to Cash m'aide énormément dans mon commerce. Réseau partout et transactions instantanées.",
+      name: "Ibrahim Keita",
+      role: "Commerçant, Abidjan",
+      image: "/images/keita.png",
+      imageAlt: "Ibrahim Keita",
+    },
+    {
+      quote:
+        "Ricash a simplifié mes transactions transfrontalières. Envoyer de l'argent n'a jamais été aussi facile.",
+      name: "Aisha Ahmed",
+      role: "Freelance, Lagos",
+      image: "/images/freelancer.png",
+      imageAlt: "Aisha Ahmed",
     },
   ];
 
-  return (
-    <section className="py-20 sm:py-28 bg-[rgb(15,15,15)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeIn>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-white mb-4">
-            Ce qu&apos;ils en disent
-          </h2>
-        </FadeIn>
-        <FadeIn delay={0.1}>
-          <p className="text-center text-[rgb(148,163,184)] text-lg max-w-2xl mx-auto mb-16">
-            Des commerçants africains qui font confiance à Golaine.
-          </p>
-        </FadeIn>
+  const trackRef = useRef<HTMLDivElement>(null);
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
-            <FadeIn key={t?.name ?? i} delay={0.2 + i * 0.15}>
-              <div className="p-8 rounded-[20px] bg-[rgb(22,22,22)] border border-white/[0.07] h-full flex flex-col">
-                {/* Stars */}
-                <div className="flex gap-1 mb-5">
-                  {[...Array(5)].map((_, j) => (
-                    <Star
-                      key={j}
-                      className="w-5 h-5 fill-[#f59e0b] text-[#f59e0b]"
-                    />
-                  ))}
-                </div>
-                <p className="text-[rgb(241,245,249)] leading-relaxed flex-1 mb-6">
-                  &ldquo;{t?.quote ?? ""}&rdquo;
-                </p>
-                <div className="flex items-center gap-3 pt-5 border-t border-white/[0.07]">
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const first = track.firstElementChild as HTMLElement | null;
+    if (!first) return;
+
+    const parseGapPx = () => {
+      const raw = getComputedStyle(track).gap || getComputedStyle(track).columnGap;
+      if (!raw || raw === "normal") return 20;
+      const n = Number.parseFloat(raw);
+      return Number.isFinite(n) ? n : 20;
+    };
+
+    const updateShift = () => {
+      const gapPx = parseGapPx();
+      track.style.setProperty(
+        "--marquee-shift",
+        `${first.offsetWidth + gapPx}px`,
+      );
+    };
+
+    updateShift();
+    const ro = new ResizeObserver(updateShift);
+    ro.observe(first);
+    ro.observe(track);
+    window.addEventListener("resize", updateShift);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateShift);
+    };
+  }, []);
+
+  const testimonialCard = (t: (typeof testimonials)[number]) => (
+    <div className="w-[360px] md:w-[580px] h-[260px] md:h-[269px] flex-shrink-0">
+      <div className="shadow-sm relative h-full rounded-[40px] text-white glossy-card border-0 bg-[rgb(13,13,13)]/95">
+        <div className="p-6 h-full">
+          <div className="flex h-full">
+            <div className="flex-1 flex flex-col pr-4 min-w-0">
+              <p className="text-white/80 leading-relaxed line-clamp-4 md:line-clamp-none">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div className="mt-auto flex flex-wrap items-center gap-3">
+                {[...Array(5)].map((_, j) => (
                   <div
-                    className={`w-11 h-11 rounded-full ${t?.color ?? ""} flex items-center justify-center text-sm font-bold text-white`}
+                    key={j}
+                    className="inline-flex items-center rounded-full bg-white/90 text-secondary shadow-inner px-2 py-1"
                   >
-                    {t?.initials ?? ""}
+                    <span className="text-xs font-semibold text-[rgb(102,87,240)]">
+                      ★
+                    </span>
                   </div>
-                  <div>
-                    <div className="font-semibold text-white text-sm">
-                      {t?.name ?? ""}
-                    </div>
-                    <div className="text-xs text-[rgb(100,116,139)]">
-                      {t?.business ?? ""}
-                    </div>
-                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="w-28 md:w-40 shrink-0 flex flex-col items-center justify-center">
+              <div className="rounded-full size-24 md:size-36 border border-white/40 shadow-md overflow-hidden bg-primary/20 relative">
+                <Image
+                  alt={t.imageAlt}
+                  src={t.image}
+                  width={144}
+                  height={144}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  sizes="(min-width: 768px) 144px, 96px"
+                />
+              </div>
+              <div className="mt-3 text-center">
+                <div className="text-white font-medium leading-tight">
+                  {t.name}
+                </div>
+                <div className="text-white/60 text-xs md:text-sm">
+                  {t.role}
                 </div>
               </div>
-            </FadeIn>
-          ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="section-y bg-[rgb(15,15,15)]">
+      <div className="container-default">
+        <div className="text-center mb-12 relative">
+          <h2 className="sh-title text-3xl md:text-4xl font-bold text-white mb-4">
+            <div className="line">Ce que disent nos clients</div>
+          </h2>
+          <p className="text-white/80 text-lg max-w-2xl mx-auto">
+            Découvrez les témoignages de nos utilisateurs satisfaits
+          </p>
+        </div>
+
+        <div className="mt-8">
+          <div
+            className="relative overflow-x-hidden overflow-y-visible mask-edges"
+            role="region"
+            aria-label="Témoignages Ricash, défilement horizontal continu"
+          >
+            <div
+              ref={trackRef}
+              className="landing-marquee-track flex w-[max-content] gap-5 will-change-transform"
+            >
+              <ul className="flex w-[max-content] gap-5 list-none m-0 p-0 shrink-0">
+                {testimonials.map((t, i) => (
+                  <li key={`a-${i}`}>{testimonialCard(t)}</li>
+                ))}
+              </ul>
+              <ul
+                className="flex w-[max-content] gap-5 list-none m-0 p-0 shrink-0"
+                aria-hidden
+              >
+                {testimonials.map((t, i) => (
+                  <li key={`b-${i}`}>{testimonialCard(t)}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1287,7 +1374,7 @@ const LandingPageContent = React.memo(function LandingPageContent() {
   return (
     <div
       suppressHydrationWarning
-      className="min-h-screen flex flex-col bg-[rgb(10,10,10)]"
+      className="flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-clip bg-[rgb(10,10,10)]"
     >
       <Navbar />
       <main className="flex-1">

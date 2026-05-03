@@ -6,6 +6,7 @@ interface UIStore {
 }
 
 export const useUIStore = create<UIStore>((set) => ({
-  sidebarOpen: true,
+  /** Fermé par défaut : mobile évite le menu plein écran au chargement ; desktop garde la rail compacte (lg). */
+  sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 }));
