@@ -50,5 +50,6 @@ test
 prompt
 
 server.log
+*.pid
 # Skills directory
 /skills/

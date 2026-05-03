@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { AppToaster } from "@shared/components/feedback/AppToaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.variable} antialiased`}>
+        <AppToaster />
         {children}
       </body>
     </html>
