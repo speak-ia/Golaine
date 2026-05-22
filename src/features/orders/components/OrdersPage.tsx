@@ -22,6 +22,8 @@ import type { OrderStatus } from "@shared/constants/status";
 import type { Order } from "@shared/types/domainTypes";
 import { ordersService } from "@features/orders/service";
 import { useServiceQuery } from "@shared/hooks/useServiceQuery";
+import { toastIfFailed } from "@shared/utils/toastResult";
+import { toast } from "sonner";
 import { ORDER_STATUS, ORDER_STATUSES } from "@shared/constants/status";
 import { formatFCFA, formatPageRange } from "@shared/utils/format";
 import { cn } from "@shared/utils/cn";
@@ -43,7 +45,7 @@ import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Label } from "@shared/components/ui/label";
 
-type ModalType = "view" | "edit" | "delete" | null;
+type ModalType = "view" | "edit" | "delete" | "create" | null;
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = ORDER_STATUSES.map((value) => ({
   value,
@@ -95,29 +97,37 @@ function OrderViewBody({ order }: { order: Order }) {
   );
 }
 
-function OrderEditBody({
+function OrderFormBody({
   order,
   onSave,
   onClose,
 }: {
-  order: Order;
-  onSave: (_o: Order) => void;
+  order: Order | null;
+  onSave: (_payload: {
+    client: string;
+    clientSub: string;
+    produit: string;
+    adresse: string;
+    montant: number;
+    status: OrderStatus;
+  }) => void;
   onClose: () => void;
 }) {
-  const [client, setClient] = useState(order.client);
-  const [produit, setProduit] = useState(order.produit);
-  const [adresse, setAdresse] = useState(order.adresse);
-  const [montant, setMontant] = useState(order.montant.toString());
-  const [status, setStatus] = useState<OrderStatus>(order.status);
+  const [client, setClient] = useState(order?.client ?? "");
+  const [produit, setProduit] = useState(order?.produit ?? "");
+  const [adresse, setAdresse] = useState(order?.adresse ?? "");
+  const [montant, setMontant] = useState(order ? String(order.montant) : "");
+  const [status, setStatus] = useState<OrderStatus>(order?.status ?? "en_attente");
 
   const handleSave = () => {
     if (!client.trim() || !produit.trim() || !adresse.trim() || !montant) return;
+    const trimmedClient = client.trim();
     onSave({
-      ...order,
-      client: client.trim(),
+      client: trimmedClient,
+      clientSub: trimmedClient,
       produit: produit.trim(),
       adresse: adresse.trim(),
-      montant: parseInt(montant, 10) || 0,
+      montant: Number.parseInt(montant, 10) || 0,
       status,
     });
   };
@@ -199,7 +209,7 @@ export default function OrdersPage() {
     resetPage,
   } = usePagination(orders, ITEMS_PER_PAGE);
 
-  const openModal = useCallback((type: ModalType, order: Order) => {
+  const openModal = useCallback((type: Exclude<ModalType, null>, order: Order) => {
     setActiveModal({ type, order });
   }, []);
 
@@ -207,21 +217,64 @@ export default function OrdersPage() {
     setActiveModal({ type: null, order: null });
   }, []);
 
-  const handleSave = useCallback(
-    (updated: Order) => {
-      setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+  const STATUS_CYCLE: OrderStatus[] = [
+    "en_attente",
+    "confirmee",
+    "en_preparation",
+    "livree",
+    "annulee",
+  ];
+
+  const handleSaveForm = useCallback(
+    async (payload: {
+      client: string;
+      clientSub: string;
+      produit: string;
+      adresse: string;
+      montant: number;
+      status: OrderStatus;
+    }) => {
+      if (activeModal.type === "create") {
+        const result = await ordersService.create(payload);
+        if (toastIfFailed(result)) return;
+        setOrders((prev) => [result.data, ...prev]);
+        toast.success("Commande créée");
+      } else if (activeModal.order) {
+        const result = await ordersService.update(activeModal.order.id, payload);
+        if (toastIfFailed(result)) return;
+        setOrders((prev) =>
+          prev.map((o) => (o.id === activeModal.order!.id ? result.data : o)),
+        );
+        toast.success("Commande mise à jour");
+      }
       closeModal();
     },
-    [closeModal]
+    [activeModal.type, activeModal.order, closeModal],
   );
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = useCallback(async () => {
     if (!activeModal.order) return;
     const id = activeModal.order.id;
+    const result = await ordersService.remove(id);
+    if (toastIfFailed(result)) return;
     setOrders((prev) => prev.filter((o) => o.id !== id));
+    toast.success("Commande supprimée");
     resetPage();
     closeModal();
   }, [activeModal.order, closeModal, resetPage]);
+
+  const handleStatusCycle = useCallback(
+    async (order: Order) => {
+      const currentIdx = STATUS_CYCLE.indexOf(order.status);
+      const next = STATUS_CYCLE[(currentIdx + 1) % STATUS_CYCLE.length];
+      const result = await ordersService.update(order.id, { status: next });
+      if (toastIfFailed(result)) return;
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? result.data : o)),
+      );
+    },
+    [],
+  );
 
   const { type: modalType, order: selectedOrder } = activeModal;
 
@@ -235,14 +288,6 @@ export default function OrdersPage() {
     { label: "Confirmées", value: confirmed.toString(), icon: CheckCircle2, color: "#10b981", bg: "#ecfdf5" },
     { label: "Livrées", value: delivered.toString(), icon: Package, color: "#f59e0b", bg: "#fffbeb" },
     { label: "Chiffre d'aff.", value: formatFCFA(revenue), icon: TrendingUp, color: "#8b5cf6", bg: "#f5f3ff" },
-  ];
-
-  const STATUS_CYCLE: OrderStatus[] = [
-    "en_attente",
-    "confirmee",
-    "en_preparation",
-    "livree",
-    "annulee",
   ];
 
   const ordersLoading =
@@ -262,7 +307,11 @@ export default function OrdersPage() {
           </h1>
           <p className="text-[13px] text-gray-500 mt-1">Suivi de vos ventes et commandes clients</p>
         </div>
-        <Button className="w-full shrink-0 cursor-pointer gap-2 bg-brand font-semibold text-white shadow-sm hover:bg-brand-dark sm:w-auto">
+        <Button
+          type="button"
+          className="w-full shrink-0 cursor-pointer gap-2 bg-brand font-semibold text-white shadow-sm hover:bg-brand-dark sm:w-auto"
+          onClick={() => setActiveModal({ type: "create", order: null })}
+        >
           <Plus className="w-4 h-4" strokeWidth={2.5} />
           Nouvelle commande
         </Button>
@@ -326,14 +375,7 @@ export default function OrdersPage() {
                         type="button"
                         className="inline-flex items-center gap-1 cursor-pointer"
                         title="Changer le statut"
-                        onClick={() => {
-                          const currentIdx = STATUS_CYCLE.indexOf(order.status);
-                          const nextIdx = (currentIdx + 1) % STATUS_CYCLE.length;
-                          const next = STATUS_CYCLE[nextIdx];
-                          setOrders((prev) =>
-                            prev.map((o) => (o.id === order.id ? { ...o, status: next } : o))
-                          );
-                        }}
+                        onClick={() => void handleStatusCycle(order)}
                       >
                         <StatusPill label={st.label} tone={st} size="sm" />
                         <ChevronDown className="w-3 h-3 text-gray-400 opacity-60" />
@@ -394,14 +436,23 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={modalType === "edit" && !!selectedOrder} onOpenChange={(o) => !o && closeModal()}>
+      <Dialog
+        open={(modalType === "edit" || modalType === "create") && (modalType === "create" || !!selectedOrder)}
+        onOpenChange={(o) => !o && closeModal()}
+      >
         <DialogContent className="sm:max-w-md bg-white text-gray-900">
           <DialogHeader>
-            <DialogTitle>Modifier la commande #{selectedOrder?.id}</DialogTitle>
+            <DialogTitle>
+              {modalType === "create"
+                ? "Nouvelle commande"
+                : `Modifier la commande #${selectedOrder?.id}`}
+            </DialogTitle>
           </DialogHeader>
-          {selectedOrder && (
-            <OrderEditBody order={selectedOrder} onSave={handleSave} onClose={closeModal} />
-          )}
+          <OrderFormBody
+            order={modalType === "create" ? null : selectedOrder}
+            onSave={handleSaveForm}
+            onClose={closeModal}
+          />
         </DialogContent>
       </Dialog>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   CreditCard,
@@ -9,8 +9,12 @@ import {
   Zap,
   TrendingUp,
 } from "lucide-react";
+import { planService, type PlanProfile } from "@features/plan/service";
 import { useSessionStore } from "@features/auth/store/sessionStore";
+import { useServiceQuery } from "@shared/hooks/useServiceQuery";
+import { toastIfFailed } from "@shared/utils/toastResult";
 import { formatMoney } from "@shared/utils/format";
+import { toast } from "sonner";
 
 type PlanName = "Starter" | "Pro" | "Business";
 
@@ -226,11 +230,18 @@ const PLANS: PlanCardData[] = [
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function PlanPage() {
+  const [profile, setProfile] = useState<PlanProfile | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanName | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const planIntent = useSessionStore((s) => s.planIntent);
   const setPlanIntent = useSessionStore((s) => s.setPlanIntent);
+
+  const loadProfile = useCallback(() => planService.getProfile(), []);
+  useServiceQuery(loadProfile, {
+    showToastOnError: true,
+    onSuccess: (data) => setProfile(data),
+  });
 
   useEffect(() => {
     if (!planIntent) return;
@@ -242,7 +253,7 @@ export default function PlanPage() {
     return () => window.clearTimeout(id);
   }, [planIntent, setPlanIntent]);
 
-  const currentPlan: PlanName = "Pro";
+  const currentPlan: PlanName = profile?.tier ?? "Starter";
 
   const plans = useMemo(() => PLANS, []);
   const planRefs = useRef<Record<PlanName, HTMLDivElement | null>>({
@@ -256,7 +267,12 @@ export default function PlanPage() {
     setShowConfirmation(true);
   };
 
-  const handleConfirmChange = () => {
+  const handleConfirmChange = async () => {
+    if (!selectedPlan) return;
+    const result = await planService.updatePlanTier(selectedPlan);
+    if (toastIfFailed(result)) return;
+    setProfile(result.data);
+    toast.success(`Plan ${selectedPlan} activé`);
     setShowConfirmation(false);
     setSelectedPlan(null);
   };
@@ -296,6 +312,13 @@ export default function PlanPage() {
           <p className="text-sm text-gray-500 mt-1">
             Une tarification simple, pensée pour la croissance. Passez à l’annuel et économisez.
           </p>
+          {profile && (
+            <p className="text-xs text-gray-500 mt-2">
+              Crédits messages : {profile.messagesUsed.toLocaleString("fr-FR")} /{" "}
+              {profile.messagesLimit.toLocaleString("fr-FR")} · Analyses image :{" "}
+              {profile.imageAnalysesUsed} / {profile.imageAnalysesLimit}
+            </p>
+          )}
         </div>
 
         {/* Billing toggle (UX: visible mobile + clavier) */}

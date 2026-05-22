@@ -11,6 +11,9 @@ import { createBrowserSupabaseClient } from "@shared/services/supabase/client";
 import { logger } from "@shared/utils/logger";
 import { toast } from "sonner";
 
+const SUPABASE_ENV_HINT =
+  "Ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local à la racine du projet, puis redémarrez complètement `npm run dev`. Vérifiez http://localhost:3000/api/health/supabase (projectRef doit correspondre au projet Supabase).";
+
 /* ──────────────────── Google Button ──────────────────── */
 function GoogleButton({ label }: { label: string }) {
   return (
@@ -167,7 +170,7 @@ function SignUpPage() {
     try {
       if (isSupabaseConfigured()) {
         const supabase = createBrowserSupabaseClient();
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: form.email.trim(),
           password: form.password,
           options: {
@@ -181,10 +184,20 @@ function SignUpPage() {
           });
           return;
         }
+        if (!data.session) {
+          toast.info("Confirmez votre e-mail", {
+            description:
+              "Un lien vous a été envoyé. Après validation, connectez-vous depuis la page de connexion. Les comptes apparaissent dans Supabase → Authentication → Users.",
+          });
+          router.push("/login");
+          return;
+        }
         router.push("/dashboard");
+        router.refresh();
       } else {
-        await new Promise((r) => setTimeout(r, 1500));
-        router.push("/dashboard");
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
       }
     } catch (error: unknown) {
       logger.error("Échec inscription", {
@@ -352,9 +365,11 @@ function LoginPage() {
           return;
         }
         router.push("/dashboard");
+        router.refresh();
       } else {
-        await new Promise((r) => setTimeout(r, 1500));
-        router.push("/dashboard");
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
       }
     } catch (error: unknown) {
       logger.error("Échec connexion", {

@@ -9,6 +9,7 @@ interface ProductStore {
   categories: string[];
   nextId: number;
   setProducts: (_products: Product[]) => void;
+  setCategories: (_categories: string[]) => void;
   addProduct: (_product: Omit<Product, "id">) => void;
   updateProduct: (_id: number, _updates: Partial<Product>) => void;
   deleteProduct: (_id: number) => void;
@@ -32,6 +33,8 @@ export const useProductStore = create<ProductStore>((set) => ({
       products,
       nextId: nextIdFrom(products),
     }),
+
+  setCategories: (categories) => set({ categories }),
 
   addProduct: (product) =>
     set((state) => ({

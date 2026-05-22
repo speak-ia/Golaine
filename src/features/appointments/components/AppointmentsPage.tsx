@@ -39,6 +39,10 @@ import { Badge } from "@shared/components/ui/badge";
 import type { AppointmentType, AppointmentStatus } from "@shared/constants/status";
 import { APPOINTMENT_TYPE, APPOINTMENT_STATUS } from "@shared/constants/status";
 import type { Appointment } from "@shared/types/domainTypes";
+import { appointmentsService } from "@features/appointments/service";
+import { useServiceQuery } from "@shared/hooks/useServiceQuery";
+import { toastIfFailed } from "@shared/utils/toastResult";
+import { toast } from "sonner";
 import {
   DAYS_FR_SHORT,
   MONTHS_FR_CAP,
@@ -55,22 +59,6 @@ import { cn } from "@shared/utils/cn";
 
 /* ──────────────────── Constants ──────────────────── */
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
-
-/* ──────────────────── Mock Data ──────────────────── */
-const initialAppointments: Appointment[] = [
-  { id: 1, title: "Livraison Fatou - Dakar", client: "Fatou Diallo", date: "2025-01-15", time: "10:00", duration: 30, type: "livraison", status: "confirme", notes: "Robes wax + pagnes", location: "Plateau, Dakar" },
-  { id: 2, title: "Démo produits - Boutique", client: "Moussa Traoré", date: "2025-01-15", time: "14:00", duration: 60, type: "rendez-vous", status: "en_attente", notes: "Intéressé par les produits alimentaires", location: "Marché Sandaga" },
-  { id: 3, title: "Conseil beauté Aminata", client: "Aminata Sow", date: "2025-01-16", time: "09:30", duration: 45, type: "rendez-vous", status: "confirme", notes: "Vente huile d'argan et savon", location: "Almadies, Dakar" },
-  { id: 4, title: "Relance Ibrahim", client: "Ibrahim Keita", date: "2025-01-16", time: "11:00", duration: 15, type: "appel", status: "en_attente", notes: "Panier abandonné", location: "" },
-  { id: 5, title: "Livraison Awa - Saint-Louis", client: "Awa Ndiaye", date: "2025-01-17", time: "08:00", duration: 120, type: "livraison", status: "confirme", notes: "Commande importante", location: "Saint-Louis" },
-  { id: 6, title: "Formation WhatsApp", client: "", date: "2025-01-17", time: "15:00", duration: 90, type: "autre", status: "confirme", notes: "Formation équipe", location: "En ligne" },
-  { id: 7, title: "Livraison Oumar", client: "Oumar Ba", date: "2025-01-18", time: "10:00", duration: 30, type: "livraison", status: "en_attente", notes: "Thiakry + Bissap", location: "Médina, Dakar" },
-  { id: 8, title: "Rendez-vous Kadiatou", client: "Kadiatou Bah", date: "2025-01-19", time: "13:00", duration: 45, type: "rendez-vous", status: "confirme", notes: "Nouvelle collection", location: "Conakry" },
-  { id: 9, title: "Appel prospect", client: "Seydou Ndiaye", date: "2025-01-20", time: "16:00", duration: 15, type: "appel", status: "en_attente", notes: "Premier contact", location: "" },
-  { id: 10, title: "Livraison Mariam", client: "Mariam Coulibaly", date: "2025-01-21", time: "09:00", duration: 60, type: "livraison", status: "annule", notes: "Client absente", location: "Bamako" },
-  { id: 11, title: "Rencontre fournisseur", client: "", date: "2025-01-22", time: "11:00", duration: 60, type: "autre", status: "confirme", notes: "Nouveau stock wax", location: "Dakar" },
-  { id: 12, title: "Suivi Fatima", client: "Fatima Diop", date: "2025-01-22", time: "15:30", duration: 20, type: "appel", status: "confirme", notes: "Satisfaction client", location: "" },
-];
 
 /* ──────────────────── Helpers ──────────────────── */
 function formatDuration(minutes: number): string {
@@ -298,8 +286,8 @@ function AppointmentCard({
 
 /* ──────────────────── Main Component ──────────────────── */
 export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
-  const [calendarDate, setCalendarDate] = useState(() => new Date(2025, 0, 1));
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<AppointmentType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
@@ -309,9 +297,15 @@ export default function AppointmentsPage() {
   const [formData, setFormData] = useState<Omit<Appointment, "id">>(getEmptyForm());
 
   /* ── Derived Data ── */
+  const loadAppointments = useCallback(() => appointmentsService.list(), []);
+  useServiceQuery(loadAppointments, {
+    showToastOnError: true,
+    onSuccess: (data) => setAppointments(data),
+  });
+
   const todayKey = toDateKey(new Date());
-  const monday = getMonday(new Date(2025, 0, 15));
-  const sunday = getSunday(new Date(2025, 0, 15));
+  const monday = getMonday(new Date());
+  const sunday = getSunday(new Date());
 
   const appointmentDates = useMemo(() => {
     const dates = new Set<string>();
@@ -394,29 +388,33 @@ export default function AppointmentsPage() {
     setIsFormOpen(true);
   }, []);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!formData.title.trim()) return;
 
     if (editingAppointment) {
+      const result = await appointmentsService.update(editingAppointment.id, formData);
+      if (toastIfFailed(result)) return;
       setAppointments((prev) =>
-        prev.map((a) =>
-          a.id === editingAppointment.id ? { ...a, ...formData } : a
-        )
+        prev.map((a) => (a.id === editingAppointment.id ? result.data : a)),
       );
+      toast.success("Rendez-vous mis à jour");
     } else {
-      setAppointments((prev) => {
-        const maxId = prev.reduce((max, a) => Math.max(max, a.id), 0);
-        return [...prev, { ...formData, id: maxId + 1 }];
-      });
+      const result = await appointmentsService.create(formData);
+      if (toastIfFailed(result)) return;
+      setAppointments((prev) => [...prev, result.data]);
+      toast.success("Rendez-vous ajouté");
     }
 
     setIsFormOpen(false);
     setEditingAppointment(null);
   }, [formData, editingAppointment]);
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
+    const result = await appointmentsService.remove(deleteTarget.id);
+    if (toastIfFailed(result)) return;
     setAppointments((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+    toast.success("Rendez-vous supprimé");
     setDeleteTarget(null);
   }, [deleteTarget]);
 

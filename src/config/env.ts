@@ -64,8 +64,15 @@ function parseEnv(): Env {
 /** Variables d'environnement parsées (côté serveur et build ; côté client seules NEXT_PUBLIC_* sont définies). */
 export const env = parseEnv();
 
+/**
+ * Lecture à l’appel (pas seulement le snapshot `env` au chargement du module) :
+ * en dev / Turbopack, le premier import pouvait avoir lieu avant que les
+ * `NEXT_PUBLIC_*` soient disponibles, ce qui forçait les mocks côté RSC.
+ */
 export function isSupabaseConfigured(): boolean {
-  return Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  return Boolean(url && key);
 }
 
 /** Timeout pour `fetch` côté client / routes (ms). */

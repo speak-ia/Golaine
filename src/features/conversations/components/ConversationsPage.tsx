@@ -10,140 +10,20 @@ import {
   Users,
   TrendingUp,
   Check,
+  Loader2,
 } from "lucide-react";
+import { conversationsService } from "@features/conversations/service";
 import { SearchInput } from "@shared/components/feedback/SearchInput";
 import { EmptyState } from "@shared/components/feedback/EmptyState";
 import { StatusPill } from "@shared/components/feedback/StatusPill";
+import { useServiceQuery } from "@shared/hooks/useServiceQuery";
 import { matchesQuery } from "@shared/utils/filter";
+import { toastIfFailed } from "@shared/utils/toastResult";
 import { cn } from "@shared/utils/cn";
 import type { Conversation, ConversationFilterTab, Message } from "@shared/types/domainTypes";
 
 type FilterTab = ConversationFilterTab;
 
-/* ═══════════════════════════════════════════════════════════════
-   MOCK DATA
-   ═══════════════════════════════════════════════════════════════ */
-
-const initialConversations: Conversation[] = [
-  { id: 1, name: "Fatou Diallo", phone: "+221 77 234 56 78", lastMessage: "D'accord, je confirme la commande !", time: "14:32", unread: 2, status: "active", avatar: "FD", gradient: "from-emerald-500 to-green-600" },
-  { id: 2, name: "Moussa Traoré", phone: "+225 07 89 12 34", lastMessage: "C'est combien le sac à main ?", time: "13:15", unread: 0, status: "active", avatar: "MT", gradient: "from-amber-500 to-orange-600" },
-  { id: 3, name: "Aminata Sow", phone: "+221 78 456 78 90", lastMessage: "Merci pour la livraison rapide 🙏", time: "11:40", unread: 0, status: "closed", avatar: "AS", gradient: "from-violet-500 to-purple-600" },
-  { id: 4, name: "Ibrahim Keita", phone: "+223 76 123 45 67", lastMessage: "Bonjour, je cherche des robes wax", time: "10:22", unread: 1, status: "active", avatar: "IK", gradient: "from-cyan-500 to-blue-600" },
-  { id: 5, name: "Awa Ndiaye", phone: "+221 77 890 12 34", lastMessage: "Pouvez-vous me faire une réduction ?", time: "09:55", unread: 0, status: "active", avatar: "AN", gradient: "from-rose-500 to-pink-600" },
-  { id: 6, name: "Oumar Ba", phone: "+221 76 567 89 01", lastMessage: "Je veux commander 5 bissap", time: "Hier", unread: 0, status: "closed", avatar: "OB", gradient: "from-teal-500 to-emerald-600" },
-  { id: 7, name: "Mariam Coulibaly", phone: "+223 70 234 56 78", lastMessage: "Le collier est-il toujours disponible ?", time: "Hier", unread: 3, status: "active", avatar: "MC", gradient: "from-fuchsia-500 to-pink-600" },
-  { id: 8, name: "Cheikh Sy", phone: "+221 78 345 67 89", lastMessage: "Bonsoir, je voudrais passer commande", time: "Lun", unread: 0, status: "active", avatar: "CS", gradient: "from-indigo-500 to-violet-600" },
-  { id: 9, name: "Fatima Diop", phone: "+221 77 678 90 12", lastMessage: "Merci beaucoup !", time: "Dim", unread: 0, status: "closed", avatar: "FD", gradient: "from-yellow-500 to-amber-600" },
-  { id: 10, name: "Boubacar Diallo", phone: "+223 71 456 78 90", lastMessage: "Quelle est la différence entre les deux ?", time: "Sam", unread: 0, status: "active", avatar: "BD", gradient: "from-lime-500 to-green-600" },
-];
-
-const initialMessages: Record<number, Message[]> = {
-  1: [
-    { sender: "client", text: "Bonjour ! Je voudrais commander 3 robes wax", time: "14:20" },
-    { sender: "agent", text: "Bonjour Fatou ! 😊 Avec plaisir. Les robes Wax S-400 sont à 5 000 FCFA chacune. Total: 15 000 FCFA. Voulez-vous confirmer ?", time: "14:21" },
-    { sender: "client", text: "Oui ! Et ajoutez 2 pagnes tissés aussi", time: "14:25" },
-    { sender: "agent", text: "Parfait ! 🧾\n\n3× Robes Wax S-400 = 15 000 FCFA\n2× Pagne Tissé Premium = 16 000 FCFA\n\nTotal: 31 000 FCFA\n\nVoulez-vous confirmer la commande ?", time: "14:26" },
-    { sender: "client", text: "D'accord, je confirme la commande !", time: "14:32" },
-  ],
-  2: [
-    { sender: "client", text: "Bonjour, quels sacs à main avez-vous ?", time: "13:00" },
-    { sender: "agent", text: "Bonjour Moussa ! 👋 Nous avons plusieurs modèles :\n\n👜 Sac Ville en cuir — 12 000 FCFA\n👜 Sac Palette beige — 8 500 FCFA\n👜 Sac Bandoulière wax — 6 000 FCFA\n\nLequel vous intéresse ?", time: "13:02" },
-    { sender: "client", text: "C'est combien le sac à main ?", time: "13:15" },
-  ],
-  3: [
-    { sender: "client", text: "Bonjour, je voudrais passer une commande", time: "11:00" },
-    { sender: "agent", text: "Bonjour Aminata ! 😊 Bienvenue ! Que souhaitez-vous commander aujourd'hui ?", time: "11:01" },
-    { sender: "client", text: "2 parfum shea butter svp", time: "11:05" },
-    { sender: "agent", text: "Excellent choix ! ✨\n\n2× Parfum Shea Butter = 10 000 FCFA\n\nVotre commande est confirmée. Livraison prévue sous 48h.", time: "11:06" },
-    { sender: "client", text: "Merci pour la livraison rapide 🙏", time: "11:40" },
-  ],
-  4: [
-    { sender: "client", text: "Bonjour, je cherche des robes wax", time: "10:22" },
-    { sender: "agent", text: "Bonjour Ibrahim ! 👋 Nous avons une belle collection de robes wax :\n\n👗 Modèle Dakar — 5 000 FCFA\n👗 Modèle Abidjan — 7 500 FCFA\n👗 Modèle Premium — 12 000 FCFA\n\nQuelle taille souhaitez-vous ?", time: "10:23" },
-    { sender: "client", text: "Taille L pour la modèle Dakar svp", time: "10:30" },
-    { sender: "agent", text: "Parfait ! La robe Wax Modèle Dakar en taille L est disponible. Total: 5 000 FCFA. Voulez-vous confirmer ?", time: "10:31" },
-  ],
-  5: [
-    { sender: "client", text: "Bonjour ! Je suis intéressée par le collier en perles", time: "09:30" },
-    { sender: "agent", text: "Bonjour Awa ! 😊 Le collier en perles artisanales est à 15 000 FCFA. Il est fait main et unique.", time: "09:32" },
-    { sender: "client", text: "Pouvez-vous me faire une réduction ?", time: "09:55" },
-    { sender: "agent", text: "Nous proposons 10% de réduction à partir de 2 articles. Si vous prenez aussi le bracelet assorti à 8 000 FCFA, le total serait de 20 700 FCFA au lieu de 23 000 FCFA. 🎁", time: "09:56" },
-    { sender: "client", text: "D'accord, je vais réfléchir", time: "09:58" },
-  ],
-  6: [
-    { sender: "client", text: "Bonjour, vous avez du bissap ?", time: "16:00" },
-    { sender: "agent", text: "Bonjour Oumar ! 🌺 Oui, le jus de bissap est disponible :\n\n1L = 2 000 FCFA\n5L = 8 000 FCFA\n\nLivraison gratuite à Dakar !", time: "16:02" },
-    { sender: "client", text: "Je veux commander 5 bissap", time: "16:10" },
-    { sender: "agent", text: "Super ! 🧃\n\n5L Bissap = 8 000 FCFA\n\nCommande confirmée ! Livraison demain entre 9h et 12h.", time: "16:11" },
-  ],
-  7: [
-    { sender: "client", text: "Bonjour, j'ai vu votre collier en or sur Instagram", time: "15:00" },
-    { sender: "agent", text: "Bonjour Mariam ! ✨ Oui, le collier Doré Élégance est toujours en promotion à 35 000 FCFA au lieu de 45 000 FCFA.", time: "15:02" },
-    { sender: "client", text: "Le collier est-il toujours disponible ?", time: "15:20" },
-    { sender: "agent", text: "Oui, nous en avons encore 3 en stock ! 🎉 Souhaitez-vous le réserver ?", time: "15:21" },
-    { sender: "client", text: "Comment se fait la livraison ?", time: "15:25" },
-  ],
-  8: [
-    { sender: "client", text: "Bonsoir, je voudrais passer commande", time: "20:30" },
-    { sender: "agent", text: "Bonsoir Cheikh ! 😊 Avec plaisir. Que souhaitez-vous commander ? Je suis là pour vous aider.", time: "20:31" },
-  ],
-  9: [
-    { sender: "client", text: "Bonjour, la commande est-elle prête ?", time: "14:00" },
-    { sender: "agent", text: "Bonjour Fatima ! Oui, votre commande #1245 est prête et sera livrée demain. 📦", time: "14:01" },
-    { sender: "client", text: "Merci beaucoup !", time: "14:05" },
-  ],
-  10: [
-    { sender: "client", text: "Bonjour, je compare vos deux modèles de chaussures", time: "11:00" },
-    { sender: "agent", text: "Bonjour Boubacar ! 👋 Nous avons le modèle Confort à 15 000 FCFA et le modèle Premium à 22 000 FCFA. Les deux sont en cuir véritable.", time: "11:02" },
-    { sender: "client", text: "Quelle est la différence entre les deux ?", time: "11:10" },
-    { sender: "agent", text: "Bonne question ! Le modèle Premium a une semelle en caoutchouc antidérapante, un intérieur en daim et des finitures brodées à la main. Le modèle Confort est plus léger et idéal pour un usage quotidien.", time: "11:11" },
-  ],
-};
-
-const mockAgentResponses: string[] = [
-  "Merci pour votre message ! Je vais vérifier cela pour vous. ✅",
-  "Bien sûr ! Laissez-moi vous proposer quelques options. 🛍️",
-  "Très bonne question ! Voici ce que je peux vous offrir :\n\n📦 Livraison gratuite\n🎁 10% de réduction\n⚡ Livraison express en 24h\n\nQu'en pensez-vous ?",
-  "Parfait ! Votre demande a bien été prise en compte. Nous vous confirmons sous peu. ✨",
-  "Je comprends votre besoin ! Nos produits sont fabriqués artisanalement avec des matériaux de qualité. N'hésitez pas à me poser d'autres questions. 😊",
-  "Super choix ! 🎉 Je prépare votre commande immédiatement. Vous recevrez une confirmation sous peu.",
-  "Merci de votre confiance ! Voici un résumé :\n\n✅ Produit disponible\n✅ Prix confirmé\n✅ Livraison prévue sous 48h\n\nAutre chose que je puisse faire pour vous ?",
-];
-
-/* ═══════════════════════════════════════════════════════════════
-   AVATAR COLORS (for dynamic gradients)
-   ═══════════════════════════════════════════════════════════════ */
-
-const avatarGradients: Record<string, string> = {
-  FD: "from-emerald-500 to-green-600",
-  MT: "from-amber-500 to-orange-600",
-  AS: "from-violet-500 to-purple-600",
-  IK: "from-cyan-500 to-blue-600",
-  AN: "from-rose-500 to-pink-600",
-  OB: "from-teal-500 to-emerald-600",
-  MC: "from-fuchsia-500 to-pink-600",
-  CS: "from-indigo-500 to-violet-600",
-  BD: "from-lime-500 to-green-600",
-  FD2: "from-yellow-500 to-amber-600",
-};
-
-/* ═══════════════════════════════════════════════════════════════
-   TYPING INDICATOR COMPONENT
-   ═══════════════════════════════════════════════════════════════ */
-
-function TypingIndicator() {
-  return (
-    <div className="flex items-start gap-2 mb-4">
-      <div className="bg-[#ECE5DD] rounded-tr-lg rounded-bl-lg rounded-br-lg px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-gray-500 animate-bounce [animation-delay:0ms]" />
-          <div className="w-2 h-2 rounded-full bg-gray-500 animate-bounce [animation-delay:150ms]" />
-          <div className="w-2 h-2 rounded-full bg-gray-500 animate-bounce [animation-delay:300ms]" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════════════
    STATS BAR COMPONENT
@@ -194,26 +74,33 @@ function StatsBar({ totalMessages, activeCount }: { totalMessages: number; activ
    ═══════════════════════════════════════════════════════════════ */
 
 export default function ConversationsPage() {
-  /* ── State ── */
-  const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
-  const [messages, setMessages] = useState<Record<number, Message[]>>(initialMessages);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [threadMessages, setThreadMessages] = useState<Record<number, Message[]>>({});
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterTab>("all");
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* ── Derived ── */
+  const loadConversations = useCallback(() => conversationsService.list(), []);
+  const onListSuccess = useCallback((data: Conversation[]) => {
+    setConversations(data);
+  }, []);
+
+  const { state: listState } = useServiceQuery(loadConversations, {
+    showToastOnError: true,
+    onSuccess: onListSuccess,
+  });
+
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
   const currentMessages = useMemo(
-    () => (selectedId ? (messages[selectedId] ?? []) : []),
-    [selectedId, messages],
+    () => (selectedId ? (threadMessages[selectedId] ?? []) : []),
+    [selectedId, threadMessages],
   );
 
   const filteredConversations = conversations.filter((c) => {
@@ -223,7 +110,10 @@ export default function ConversationsPage() {
   });
 
   const activeCount = conversations.filter((c) => c.status === "active").length;
-  const totalMessagesCount = Object.values(messages).reduce((sum, msgs) => sum + msgs.length, 0);
+  const totalMessagesCount = Object.values(threadMessages).reduce(
+    (sum, msgs) => sum + msgs.length,
+    0,
+  );
 
   /* ── Scroll to bottom ── */
   const scrollToBottom = useCallback(() => {
@@ -234,106 +124,69 @@ export default function ConversationsPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [currentMessages, isTyping, scrollToBottom]);
+  }, [currentMessages, messagesLoading, scrollToBottom]);
 
-  /* ── Select conversation ── */
-  const handleSelectConversation = (id: number) => {
-    setSelectedId(id);
-    setMobileShowChat(true);
-    // Clear unread
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
-    );
-    // Focus input after a short delay
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
-  };
+  const loadMessagesForThread = useCallback(async (id: number) => {
+    setMessagesLoading(true);
+    const result = await conversationsService.getMessages(id);
+    setMessagesLoading(false);
+    if (toastIfFailed(result)) return;
+    setThreadMessages((prev) => ({ ...prev, [id]: result.data }));
+  }, []);
+
+  const handleSelectConversation = useCallback(
+    async (id: number) => {
+      setSelectedId(id);
+      setMobileShowChat(true);
+
+      const readResult = await conversationsService.markRead(id);
+      if (!toastIfFailed(readResult)) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)),
+        );
+      }
+
+      if (!threadMessages[id]) {
+        await loadMessagesForThread(id);
+      }
+
+      setTimeout(() => inputRef.current?.focus(), 100);
+    },
+    [threadMessages, loadMessagesForThread],
+  );
 
   /* ── Back to list (mobile) ── */
   const handleBackToList = () => {
     setMobileShowChat(false);
   };
 
-  /* ── Send message ── */
-  const handleSendMessage = () => {
-    if (!inputValue.trim() || !selectedId) return;
+  const handleSendMessage = useCallback(async () => {
+    if (!inputValue.trim() || !selectedId || isSending) return;
 
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
+    setIsSending(true);
+    const result = await conversationsService.sendMessage(
+      selectedId,
+      inputValue.trim(),
+      "client",
+    );
+    setIsSending(false);
 
-    const newMessage: Message = {
-      sender: "client",
-      text: inputValue.trim(),
-      time: timeStr,
-    };
+    if (toastIfFailed(result)) return;
 
-    setMessages((prev) => ({
+    const msg = result.data;
+    setThreadMessages((prev) => ({
       ...prev,
-      [selectedId]: [...(prev[selectedId] ?? []), newMessage],
+      [selectedId]: [...(prev[selectedId] ?? []), msg],
     }));
-
-    // Update last message in conversation list
     setConversations((prev) =>
       prev.map((c) =>
         c.id === selectedId
-          ? { ...c, lastMessage: newMessage.text, time: timeStr }
-          : c
-      )
+          ? { ...c, lastMessage: msg.text, time: msg.time }
+          : c,
+      ),
     );
-
     setInputValue("");
-
-    // Show typing indicator, then respond
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(true);
-    }, 1500);
-
-    responseTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-
-      const responseText =
-        mockAgentResponses[Math.floor(Math.random() * mockAgentResponses.length)];
-      const responseTime = new Date();
-      const responseTimeStr = `${responseTime
-        .getHours()
-        .toString()
-        .padStart(2, "0")}:${responseTime
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`;
-
-      const agentMessage: Message = {
-        sender: "agent",
-        text: responseText,
-        time: responseTimeStr,
-      };
-
-      setMessages((prev) => ({
-        ...prev,
-        [selectedId]: [...(prev[selectedId] ?? []), agentMessage],
-      }));
-
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === selectedId
-            ? { ...c, lastMessage: responseText, time: responseTimeStr }
-            : c
-        )
-      );
-    }, 3500);
-  };
-
-  /* ── Cleanup timeouts on unmount ── */
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      if (responseTimeoutRef.current) clearTimeout(responseTimeoutRef.current);
-    };
-  }, []);
+  }, [inputValue, selectedId, isSending]);
 
   /* ── Handle key press ── */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -402,11 +255,15 @@ export default function ConversationsPage() {
 
       {/* Conversation Items */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
+        {listState.status === "loading" && conversations.length === 0 ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-brand" />
+          </div>
+        ) : null}
         <div className="space-y-0.5">
           {filteredConversations.map((conv) => {
             const isSelected = selectedId === conv.id;
-            const gradient =
-              avatarGradients[conv.avatar] ?? "from-gray-400 to-gray-500";
+            const gradient = conv.gradient || "from-gray-400 to-gray-500";
 
             return (
               <button
@@ -492,8 +349,7 @@ export default function ConversationsPage() {
     }
 
     const gradient =
-      avatarGradients[selectedConversation.avatar] ??
-      "from-gray-400 to-gray-500";
+      selectedConversation.gradient || "from-gray-400 to-gray-500";
 
     return (
       <div className="flex flex-col h-full bg-[#ECE5DD]">
@@ -553,9 +409,14 @@ export default function ConversationsPage() {
 
           {/* Messages */}
           <div className="relative z-10 px-4 py-4">
-            {currentMessages.map((msg, idx) => (
+            {messagesLoading && currentMessages.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : null}
+            {currentMessages.map((msg) => (
               <div
-                key={`${selectedId}-${idx}`}
+                key={msg.id ?? `${selectedId}-${msg.time}-${msg.text.slice(0, 8)}`}
                 className={`flex mb-2 ${
                   msg.sender === "client" ? "justify-end" : "justify-start"
                 }`}
@@ -587,8 +448,13 @@ export default function ConversationsPage() {
               </div>
             ))}
 
-            {/* Typing Indicator */}
-            {isTyping && <TypingIndicator />}
+            {isSending ? (
+              <div className="flex justify-start mb-2">
+                <div className="bg-white rounded-lg px-3 py-2 text-xs text-gray-500 border border-gray-100">
+                  Envoi…
+                </div>
+              </div>
+            ) : null}
 
             <div ref={messagesEndRef} />
           </div>
@@ -609,9 +475,15 @@ export default function ConversationsPage() {
             />
             <button
               onClick={handleSendMessage}
-              disabled={!inputValue.trim() || selectedConversation.status === "closed"}
+              disabled={
+                !inputValue.trim() ||
+                selectedConversation.status === "closed" ||
+                isSending
+              }
               className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all cursor-pointer ${
-                inputValue.trim() && selectedConversation.status !== "closed"
+                inputValue.trim() &&
+                selectedConversation.status !== "closed" &&
+                !isSending
                   ? "bg-[#25D366] hover:bg-[#16A34A] text-white shadow-md shadow-[#25D366]/25"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}

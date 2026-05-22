@@ -1,15 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured } from "@/config/env";
 import { InternalServerError } from "@shared/errors/AppError";
 import { logger } from "@shared/utils/logger";
-import type { Database } from "./types";
 
 const isDev =
   typeof process !== "undefined" && process.env.NODE_ENV === "development";
 
 /** Client serveur (Server Components / actions) — uniquement si Supabase est configuré. */
-export async function createServerSupabaseClient() {
+export async function createServerSupabaseClient(): Promise<SupabaseClient> {
   if (!isSupabaseConfigured()) {
     throw new InternalServerError(
       isDev
@@ -20,7 +20,7 @@ export async function createServerSupabaseClient() {
 
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
@@ -20,6 +20,12 @@ import { useUIStore } from "../store/uiStore";
 import { useSessionStore } from "@features/auth/store/sessionStore";
 import { formatDateLong } from "@shared/utils/date";
 import { useImageUpload } from "@shared/hooks/useImageUpload";
+import { isSupabaseConfigured } from "@/config/env";
+import { shouldUseSupabaseData } from "@shared/services/pickServiceImplementation";
+import { settingsService } from "@features/settings/service";
+import { createBrowserSupabaseClient } from "@shared/services/supabase/client";
+import { getInitials } from "@shared/utils/text";
+import type { PlanTier } from "@shared/types/domainTypes";
 
 const pageTitles: Record<SidebarView, string> = {
   dashboard: "DASHBOARD",
@@ -60,6 +66,50 @@ export default function DashboardHeader() {
   const setProfilePhoto = useSessionStore((s) => s.setProfilePhoto);
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [headerProfile, setHeaderProfile] = useState<{
+    name: string;
+    email: string;
+    planTier: PlanTier;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!shouldUseSupabaseData()) {
+        if (!cancelled) {
+          setHeaderProfile({
+            name: "Alassane",
+            email: "alassane@golaine.sn",
+            planTier: "Pro",
+          });
+        }
+        return;
+      }
+      const res = await settingsService.getProfile();
+      if (cancelled) return;
+      if (res.success) {
+        setHeaderProfile({
+          name: res.data.name,
+          email: res.data.email,
+          planTier: res.data.planTier,
+        });
+      } else {
+        setHeaderProfile({
+          name: "Compte",
+          email: "",
+          planTier: "Starter",
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayName = headerProfile?.name ?? "…";
+  const displayEmail = headerProfile?.email ?? "";
+  const displayPlan = headerProfile?.planTier ?? "Starter";
+  const initials = getInitials(displayName === "…" ? "?" : displayName);
 
   const { inputRef: profileFileInputRef, open: openProfilePhotoPicker, onChange: onProfilePhotoChange } =
     useImageUpload({
@@ -116,16 +166,18 @@ export default function DashboardHeader() {
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Photo" className="h-full w-full object-cover" />
                 ) : (
-                  "AD"
+                  initials
                 )}
               </div>
               <div className="hidden flex-col items-start sm:flex">
                 <span className="text-sm font-semibold leading-tight text-gray-800 transition-colors group-hover:text-gray-900">
-                  Alassane
+                  {displayName}
                 </span>
                 <div className="flex items-center gap-1">
                   <Crown className="h-3 w-3 text-amber-500" />
-                  <span className="text-[11px] font-medium leading-tight text-gray-500">Plan Pro</span>
+                  <span className="text-[11px] font-medium leading-tight text-gray-500">
+                    Plan {displayPlan}
+                  </span>
                 </div>
               </div>
               <ChevronDown
@@ -151,7 +203,7 @@ export default function DashboardHeader() {
                   {profilePhoto ? (
                     <img src={profilePhoto} alt="Photo" className="h-full w-full object-cover" />
                   ) : (
-                    "AD"
+                    initials
                   )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover/photo:bg-black/40">
                     <Camera className="h-4 w-4 text-white opacity-0 transition-opacity duration-200 group-hover/photo:opacity-100" />
@@ -165,14 +217,13 @@ export default function DashboardHeader() {
                   onChange={onProfilePhotoChange}
                 />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-white">Alassane Amadou Diallo</p>
-                  <p className="truncate text-xs text-white/70">alassane@golaine.sn</p>
+                  <p className="truncate text-sm font-bold text-white">{displayName}</p>
+                  <p className="truncate text-xs text-white/70">{displayEmail || "—"}</p>
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-1.5">
                 <Crown className="h-3 w-3 text-amber-300" />
-                <span className="text-xs font-semibold text-white/90">Plan Pro</span>
-                <span className="ml-auto text-[10px] text-white/50">49 000 FCFA/mois</span>
+                <span className="text-xs font-semibold text-white/90">Plan {displayPlan}</span>
               </div>
               {profilePhoto && (
                 <button
@@ -219,7 +270,12 @@ export default function DashboardHeader() {
 
             <div className="border-t border-gray-100 p-2">
               <button
-                onClick={() => {
+                type="button"
+                onClick={async () => {
+                  if (isSupabaseConfigured()) {
+                    const supabase = createBrowserSupabaseClient();
+                    await supabase.auth.signOut();
+                  }
                   router.push("/");
                   setProfileOpen(false);
                 }}

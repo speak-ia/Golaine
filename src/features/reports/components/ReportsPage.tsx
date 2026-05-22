@@ -1,6 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { reportsService } from "@features/reports/service";
+import type {
+  ReportAiMetric,
+  ReportTimelineEvent,
+  ReportTopProduct,
+  WeeklyReport,
+} from "@features/reports/types";
+import { useServiceQuery } from "@shared/hooks/useServiceQuery";
+import { Loader2 } from "lucide-react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,7 +29,6 @@ import {
   MessageCircle,
   ShoppingBag,
   AlertCircle,
-  Star,
 } from "lucide-react";
 import { formatFCFA } from "@shared/utils/format";
 import { DAYS_FR_SHORT, formatDateFR } from "@shared/utils/date";
@@ -98,8 +106,7 @@ function WeekSelector({
    DAILY ACTIVITY CHART (CSS-based)
    ════════════════════════════════════════════════════════════════ */
 
-function DailyActivityChart() {
-  const values = [28, 35, 42, 38, 45, 52, 15];
+function DailyActivityChart({ values }: { values: number[] }) {
   const maxVal = Math.max(...values);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -235,45 +242,13 @@ function DailyActivityChart() {
    TOP PRODUCTS TABLE
    ════════════════════════════════════════════════════════════════ */
 
-function TopProductsTable() {
-  const products = [
-    {
-      rank: 1,
-      name: "Robe Wax S-400",
-      quantity: 18,
-      revenue: 90_000,
-      percentage: 28,
-    },
-    {
-      rank: 2,
-      name: "Bissap 1L",
-      quantity: 45,
-      revenue: 67_500,
-      percentage: 21,
-    },
-    {
-      rank: 3,
-      name: "Pagne Tissé Premium",
-      quantity: 8,
-      revenue: 64_000,
-      percentage: 19,
-    },
-    {
-      rank: 4,
-      name: "Huile d'Argan Bio",
-      quantity: 5,
-      revenue: 60_000,
-      percentage: 18,
-    },
-    {
-      rank: 5,
-      name: "Thiakry Nature",
-      quantity: 20,
-      revenue: 40_000,
-      percentage: 14,
-    },
-  ];
-
+function TopProductsTable({
+  products,
+  total,
+}: {
+  products: ReportTopProduct[];
+  total: number;
+}) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-5">
@@ -290,7 +265,11 @@ function TopProductsTable() {
         </div>
       </div>
 
-      {/* Table */}
+      {products.length === 0 ? (
+        <p className="text-sm text-gray-500 py-8 text-center">
+          Aucune vente enregistrée sur cette semaine.
+        </p>
+      ) : (
       <div className="overflow-x-auto -mx-6 px-6">
         <table className="w-full min-w-[500px]">
           <thead>
@@ -366,14 +345,16 @@ function TopProductsTable() {
           </tbody>
         </table>
       </div>
+      )}
 
-      {/* Total */}
+      {products.length > 0 && (
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
         <span className="text-sm font-semibold text-gray-500">Total</span>
         <span className="text-sm font-bold text-gray-900">
-          {formatFCFA(321_500)}
+          {formatFCFA(total)}
         </span>
       </div>
+      )}
     </div>
   );
 }
@@ -382,62 +363,9 @@ function TopProductsTable() {
    AI PERFORMANCE SECTION
    ════════════════════════════════════════════════════════════════ */
 
-function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[...Array(max)].map((_, i) => (
-        <Star
-          key={i}
-          className={`w-3.5 h-3.5 ${
-            i < Math.floor(rating)
-              ? "fill-amber-400 text-amber-400"
-              : i < rating
-              ? "fill-amber-400/50 text-amber-400"
-              : "fill-gray-200 text-gray-200"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
+const AI_ICONS = [Zap, CircleCheck, SmilePlus, Bot] as const;
 
-function AIPerformance() {
-  const metrics = [
-    {
-      icon: Zap,
-      label: "Temps de réponse moyen",
-      value: "2.3 secondes",
-      percentage: 92,
-      color: "#25D366",
-      bgColor: "#E8F8EF",
-    },
-    {
-      icon: CircleCheck,
-      label: "Taux de résolution",
-      value: "89%",
-      percentage: 89,
-      color: "#8B5CF6",
-      bgColor: "#F3F0FF",
-    },
-    {
-      icon: SmilePlus,
-      label: "Satisfaction client",
-      value: "4.5/5",
-      percentage: 90,
-      color: "#F59E0B",
-      bgColor: "#FFFBEB",
-      extra: <StarRating rating={4.5} />,
-    },
-    {
-      icon: Bot,
-      label: "Conversations automatisées",
-      value: "87%",
-      percentage: 87,
-      color: "#0EA5E9",
-      bgColor: "#F0F9FF",
-    },
-  ];
-
+function AIPerformance({ metrics }: { metrics: ReportAiMetric[] }) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-5">
@@ -455,8 +383,11 @@ function AIPerformance() {
       </div>
 
       <div className="space-y-5">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
+        {metrics.length === 0 ? (
+          <p className="text-sm text-gray-500">Pas encore de données IA sur cette période.</p>
+        ) : null}
+        {metrics.map((metric, i) => {
+          const Icon = AI_ICONS[i] ?? Bot;
           return (
             <div key={metric.label}>
               <div className="flex items-center justify-between mb-2">
@@ -478,7 +409,6 @@ function AIPerformance() {
                       <span className="text-lg font-bold text-gray-900">
                         {metric.value}
                       </span>
-                      {metric.extra}
                     </div>
                   </div>
                 </div>
@@ -578,70 +508,7 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
   );
 }
 
-function ActivityTimeline() {
-  const events: TimelineEvent[] = [
-    {
-      day: "Dimanche",
-      time: "18:45",
-      text: "Rapport hebdomadaire généré automatiquement",
-      type: "event",
-    },
-    {
-      day: "Samedi",
-      time: "14:20",
-      text: "Commande #1008 confirmée par Aminata Sow — 15 000 FCFA",
-      type: "sale",
-    },
-    {
-      day: "Samedi",
-      time: "10:05",
-      text: "Pic de messages : 52 messages traités par l'IA",
-      type: "message",
-    },
-    {
-      day: "Vendredi",
-      time: "16:30",
-      text: "Nouveau contact : Oumar Bah — intéressé par les pagnes tissés",
-      type: "contact",
-    },
-    {
-      day: "Vendredi",
-      time: "09:12",
-      text: "Agent IA a résolu 12 conversations sans intervention",
-      type: "message",
-    },
-    {
-      day: "Jeudi",
-      time: "15:48",
-      text: "Commande #1005 livrée avec succès — Fatou Diallo",
-      type: "sale",
-    },
-    {
-      day: "Jeudi",
-      time: "11:00",
-      text: "Mise à jour du catalogue : 3 nouveaux produits ajoutés",
-      type: "event",
-    },
-    {
-      day: "Mercredi",
-      time: "17:22",
-      text: "Nouveau contact : Aïssatou Ndiaye — recommandée par Fatou",
-      type: "contact",
-    },
-    {
-      day: "Mercredi",
-      time: "10:30",
-      text: "Commande #1003 confirmée par Moussa Traoré — 32 000 FCFA",
-      type: "sale",
-    },
-    {
-      day: "Mardi",
-      time: "16:45",
-      text: "Nouveau contact : Boubacar Diallo — secteur agroalimentaire",
-      type: "contact",
-    },
-  ];
-
+function ActivityTimeline({ events }: { events: ReportTimelineEvent[] }) {
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100">
       <div className="flex items-center justify-between mb-5">
@@ -674,9 +541,15 @@ function ActivityTimeline() {
       </div>
 
       <div className="max-h-[460px] overflow-y-auto pr-2 custom-scrollbar">
-        {events.map((event, i) => (
-          <TimelineItem key={i} event={event} />
-        ))}
+        {events.length === 0 ? (
+          <p className="text-sm text-gray-500 py-6 text-center">
+            Aucune activité enregistrée cette semaine.
+          </p>
+        ) : (
+          events.map((event, i) => (
+            <TimelineItem key={`${event.day}-${event.time}-${i}`} event={event} />
+          ))
+        )}
       </div>
     </div>
   );
@@ -686,8 +559,37 @@ function ActivityTimeline() {
    MAIN COMPONENT
    ════════════════════════════════════════════════════════════════ */
 
+const EMPTY_REPORT: WeeklyReport = {
+  messagesPerDay: [0, 0, 0, 0, 0, 0, 0],
+  kpis: [],
+  topProducts: [],
+  topProductsTotal: 0,
+  aiMetrics: [],
+  timeline: [],
+};
+
 export default function ReportsPage() {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [report, setReport] = useState<WeeklyReport>(EMPTY_REPORT);
+
+  const loadReport = useCallback(
+    () => reportsService.getWeeklyReport(weekOffset),
+    [weekOffset],
+  );
+
+  const { state: reportState, refetch } = useServiceQuery(loadReport, {
+    showToastOnError: true,
+    onSuccess: (data) => setReport(data),
+  });
+
+  const weekLoaded = useRef(false);
+  useEffect(() => {
+    if (!weekLoaded.current) {
+      weekLoaded.current = true;
+      return;
+    }
+    void refetch();
+  }, [weekOffset, refetch]);
 
   const handlePrev = () => {
     setWeekOffset((prev) => Math.max(prev - 1, -52));
@@ -701,70 +603,7 @@ export default function ReportsPage() {
     setWeekOffset(0);
   };
 
-  const kpiCards: {
-    label: string;
-    value: string;
-    trend: string;
-    trendUp: boolean;
-    icon: React.ElementType;
-    iconColor: string;
-    iconBg: string;
-  }[] = [
-    {
-      label: "Messages reçus",
-      value: "245",
-      trend: "+12%",
-      trendUp: true,
-      icon: MessageSquare,
-      iconColor: "#25D366",
-      iconBg: "#E8F8EF",
-    },
-    {
-      label: "Messages envoyés (IA)",
-      value: "198",
-      trend: "+8%",
-      trendUp: true,
-      icon: Send,
-      iconColor: "#3B82F6",
-      iconBg: "#EFF6FF",
-    },
-    {
-      label: "Nouvelles commandes",
-      value: "12",
-      trend: "+25%",
-      trendUp: true,
-      icon: ShoppingCart,
-      iconColor: "#8B5CF6",
-      iconBg: "#F3F0FF",
-    },
-    {
-      label: "Chiffre d'affaires",
-      value: formatFCFA(245_000),
-      trend: "+18%",
-      trendUp: true,
-      icon: TrendingUp,
-      iconColor: "#059669",
-      iconBg: "#ECFDF5",
-    },
-    {
-      label: "Nouveaux contacts",
-      value: "8",
-      trend: "+5%",
-      trendUp: true,
-      icon: UserPlus,
-      iconColor: "#F97316",
-      iconBg: "#FFF7ED",
-    },
-    {
-      label: "Taux de conversion",
-      value: "15.2%",
-      trend: "+2.1%",
-      trendUp: true,
-      icon: Target,
-      iconColor: "#0891B2",
-      iconBg: "#ECFEFF",
-    },
-  ];
+  const loading = reportState.status === "loading";
 
   return (
     <div className="space-y-6">
@@ -776,9 +615,14 @@ export default function ReportsPage() {
         onReset={handleReset}
       />
 
-      {/* KPI Cards — 2x3 on desktop, 1 col mobile */}
+      {loading && report.kpis.length === 0 ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-brand" />
+        </div>
+      ) : (
+        <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {kpiCards.map((kpi) => (
+        {report.kpis.map((kpi) => (
           <StatCard
             key={kpi.label}
             label={kpi.label}
@@ -793,16 +637,16 @@ export default function ReportsPage() {
       </div>
 
       {/* Daily Activity Chart — full width */}
-      <DailyActivityChart />
+      <DailyActivityChart values={report.messagesPerDay} />
 
-      {/* Products Table + AI Performance — side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TopProductsTable />
-        <AIPerformance />
+        <TopProductsTable products={report.topProducts} total={report.topProductsTotal} />
+        <AIPerformance metrics={report.aiMetrics} />
       </div>
 
-      {/* Activity Timeline — full width */}
-      <ActivityTimeline />
+      <ActivityTimeline events={report.timeline} />
+        </>
+      )}
     </div>
   );
 }

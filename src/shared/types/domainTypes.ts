@@ -87,6 +87,7 @@ export interface Appointment {
 }
 
 export interface Message {
+  id?: number;
   sender: "client" | "agent";
   text: string;
   time: string;

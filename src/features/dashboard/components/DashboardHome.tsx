@@ -1,5 +1,6 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import {
   Users,
   ShoppingCart,
@@ -14,52 +15,62 @@ import {
   type DashboardActivityType,
 } from "@shared/constants/status";
 import { BRAND } from "@shared/constants/brand";
+import type { DashboardHomeData } from "../types/dashboardData";
 
-const OrdersSummary = () => (
-  <div className="rounded-2xl bg-gradient-to-br from-[#111827] to-[#1F2937] p-6 text-white">
-    <div className="mb-4 flex items-center justify-between">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300">RÉSUMÉ COMMANDES</h3>
-      <ShoppingCart className="h-4 w-4 text-gray-400" />
-    </div>
-    <p className="text-3xl font-bold text-white">50 000F</p>
-    <p className="mt-2 text-sm font-medium text-brand">Confirmées + livrées</p>
-    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-4">
-      <div>
-        <p className="text-xs text-gray-400">Total</p>
-        <p className="text-sm font-semibold text-white">2 commandes</p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-400">En attente</p>
-        <p className="text-sm font-semibold text-yellow-400">0</p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-400">Livrées</p>
-        <p className="text-sm font-semibold text-brand">2</p>
-      </div>
-    </div>
-  </div>
-);
+function formatFcfa(n: number): string {
+  return `${n.toLocaleString("fr-FR")} F`;
+}
 
-const OrdersChart = () => {
-  const hours = ["00", "02", "04", "06", "08", "10", "12", "14", "16", "18", "20", "22"];
-  const data = [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
-  const maxVal = Math.max(...data, 1);
+function OrdersSummary({ data }: { data: DashboardHomeData }) {
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-[#111827] to-[#1F2937] p-6 text-white">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-300">RÉSUMÉ COMMANDES</h3>
+        <ShoppingCart className="h-4 w-4 text-gray-400" />
+      </div>
+      <p className="text-3xl font-bold text-white">{formatFcfa(data.revenueMonthFcfa)}</p>
+      <p className="mt-2 text-sm font-medium text-brand">Confirmées + livrées (ce mois)</p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-4">
+        <div>
+          <p className="text-xs text-gray-400">Total</p>
+          <p className="text-sm font-semibold text-white">
+            {data.ordersTotalNonCancelled} commande{data.ordersTotalNonCancelled > 1 ? "s" : ""}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400">En attente</p>
+          <p className="text-sm font-semibold text-yellow-400">{data.ordersPending}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400">Livrées</p>
+          <p className="text-sm font-semibold text-brand">{data.ordersDelivered}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const HOUR_LABELS = ["00", "02", "04", "06", "08", "10", "12", "14", "16", "18", "20", "22"];
+
+function OrdersChart({ data }: { data: DashboardHomeData }) {
+  const chartData = data.ordersByTwoHourSlot12;
+  const maxVal = Math.max(...chartData, 1);
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6">
       <div className="mb-1 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-gray-700">Commandes / 24h</h3>
-          <p className="mt-0.5 text-xs text-gray-400">par tranche horaire</p>
+          <p className="mt-0.5 text-xs text-gray-400">par tranche horaire (2 h)</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-lg font-bold text-gray-900">2</span>
+          <span className="text-lg font-bold text-gray-900">{data.ordersLast24hTotal}</span>
           <span className="text-xs text-gray-400">total</span>
           <ArrowUpRight className="h-4 w-4 text-brand" />
         </div>
       </div>
       <div className="mt-4 flex h-32 items-end justify-between gap-1.5 px-1">
-        {data.map((val, i) => (
+        {chartData.map((val, i) => (
           <div key={i} className="flex flex-1 flex-col items-center gap-1">
             <div className="group relative w-full">
               <div
@@ -70,123 +81,131 @@ const OrdersChart = () => {
                 {val} commande{val > 1 ? "s" : ""}
               </div>
             </div>
-            <span className="text-[10px] text-gray-400">{hours[i]}h</span>
+            <span className="text-[10px] text-gray-400">{HOUR_LABELS[i]}h</span>
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+const typeIcons: Record<DashboardActivityType, LucideIcon> = {
+  order: ShoppingCart,
+  contact: Users,
+  agent: TrendingUp,
+  success: ArrowUpRight,
 };
 
-const RecentActivity = () => {
-  const activities: { time: string; text: string; type: DashboardActivityType }[] = [
-    { time: "14:32", text: "Nouvelle commande reçue — #1248", type: "order" },
-    { time: "13:15", text: "Fatou Diallo a été ajoutée aux contacts", type: "contact" },
-    { time: "11:40", text: "Agent IA a répondu à 3 messages", type: "agent" },
-    { time: "10:22", text: "Commande #1247 livrée avec succès", type: "success" },
-    { time: "09:05", text: "Nouveau contact: Moussa Traoré", type: "contact" },
-  ];
-
-  const typeIcons = {
-    order: ShoppingCart,
-    contact: Users,
-    agent: TrendingUp,
-    success: ArrowUpRight,
-  };
-
+function RecentActivity({ activities }: { activities: DashboardHomeData["activities"] }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-700">Activité récente</h3>
-        <button className="cursor-pointer text-xs font-medium text-brand hover:underline">Voir tout</button>
+        <button type="button" className="cursor-pointer text-xs font-medium text-brand hover:underline">
+          Voir tout
+        </button>
       </div>
-      <div className="space-y-3">
-        {activities.map((activity, i) => {
-          const Icon = typeIcons[activity.type];
-          return (
-            <div key={i} className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-gray-50">
+      {activities.length === 0 ? (
+        <p className="py-6 text-center text-sm text-gray-500">Aucune activité pour le moment.</p>
+      ) : (
+        <div className="space-y-3">
+          {activities.map((activity, i) => {
+            const Icon = typeIcons[activity.type];
+            return (
               <div
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
-                  DASHBOARD_ACTIVITY_CLASS[activity.type]
-                }`}
+                key={`${activity.time}-${i}`}
+                className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-gray-50"
               >
-                <Icon className="h-4 w-4" />
+                <div
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
+                    DASHBOARD_ACTIVITY_CLASS[activity.type]
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-gray-700">{activity.text}</p>
+                </div>
+                <span className="flex flex-shrink-0 items-center gap-1 text-xs text-gray-400">
+                  <Clock className="h-3 w-3" />
+                  {activity.time}
+                </span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-gray-700">{activity.text}</p>
-              </div>
-              <span className="flex flex-shrink-0 items-center gap-1 text-xs text-gray-400">
-                <Clock className="h-3 w-3" />
-                {activity.time}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
-};
+}
 
-export default function DashboardHome() {
+export default function DashboardHome({ data }: { data: DashboardHomeData }) {
+  const contactsTrend =
+    data.contactsThisWeek > 0
+      ? `+${data.contactsThisWeek} cette semaine`
+      : "Aucun nouveau cette semaine";
+  const ordersTrend =
+    data.ordersThisMonth > 0 ? `+${data.ordersThisMonth} ce mois` : "0 ce mois";
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Contacts"
-          value="1"
+          value={String(data.contactsCount)}
           icon={Users}
           iconColor="#8B5CF6"
           iconBg="#F3F0FF"
-          trend="+1 cette semaine"
+          trend={contactsTrend}
         />
         <StatCard
           label="Commandes"
-          value="2"
+          value={String(data.ordersCountActive)}
           icon={ShoppingCart}
           iconColor={BRAND.green}
           iconBg={BRAND.tint}
-          trend="+2 ce mois"
+          trend={ordersTrend}
         />
         <StatCard
           label="Rendez-vous"
-          value="0"
+          value={String(data.appointmentsCount)}
           icon={CalendarDays}
           iconColor="#F97316"
           iconBg="#FFF7ED"
         />
         <StatCard
           label="Chiffre d'affaires"
-          value="50 000 F"
+          value={formatFcfa(data.revenueMonthFcfa)}
           icon={TrendingUp}
           iconColor="#0EA5E9"
           iconBg="#F0F9FF"
-          trend="+12% vs mois dernier"
+          trend={data.revenueTrendLabel}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatProgressCard
           title="Messages ce mois"
-          current={909}
-          max={1500}
+          current={data.messagesUsed}
+          max={Math.max(data.messagesLimit, 1)}
           color={BRAND.green}
           unit="messages"
         />
         <StatProgressCard
           title="Analyses d'images"
-          current={30}
-          max={50}
+          current={data.imageAnalysisUsed}
+          max={Math.max(data.imageAnalysisLimit, 1)}
           color="#0EA5E9"
           unit="analyses"
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <OrdersSummary />
-        <OrdersChart />
+        <OrdersSummary data={data} />
+        <OrdersChart data={data} />
       </div>
 
-      <RecentActivity />
+      <RecentActivity activities={data.activities} />
     </div>
   );
 }

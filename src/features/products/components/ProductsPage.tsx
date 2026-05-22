@@ -41,6 +41,8 @@ import { agentsService } from "@features/agents/service";
 import { MOCK_AGENTS_IA } from "@features/agents/data/mockAgents";
 import { productsService } from "@features/products/service";
 import { useProductStore } from "@features/products/store/productStore";
+import { toastIfFailed } from "@shared/utils/toastResult";
+import { toast } from "sonner";
 import type { AgentIA, Product } from "@shared/types/domainTypes";
 import { useServiceQuery } from "@shared/hooks/useServiceQuery";
 import { formatFCFA } from "@shared/utils/format";
@@ -151,8 +153,14 @@ function productToForm(p: Product): ProductFormData {
 }
 
 /* ──────────────────── Category Manager Component ──────────────────── */
-const CategoryManager = React.memo(function CategoryManager() {
-  const { categories, addCategory, renameCategory, deleteCategory } = useProductStore();
+const CategoryManager = React.memo(function CategoryManager({
+  onRenameCategory,
+  onDeleteCategory,
+}: {
+  onRenameCategory: (_old: string, _new: string) => Promise<void>;
+  onDeleteCategory: (_name: string) => Promise<void>;
+}) {
+  const { categories, addCategory } = useProductStore();
   const [newCatName, setNewCatName] = useState("");
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -171,17 +179,17 @@ const CategoryManager = React.memo(function CategoryManager() {
     setEditValue(name);
   }
 
-  function handleSaveEdit() {
+  async function handleSaveEdit() {
     const trimmed = editValue.trim();
     if (!trimmed || !editingCat) return;
     if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase() && c !== editingCat)) return;
-    renameCategory(editingCat, trimmed);
+    await onRenameCategory(editingCat, trimmed);
     setEditingCat(null);
     setEditValue("");
   }
 
-  function handleConfirmDelete(name: string) {
-    deleteCategory(name);
+  async function handleConfirmDelete(name: string) {
+    await onDeleteCategory(name);
     setDeleteConfirm(null);
   }
 
@@ -735,18 +743,28 @@ export default function ProductsPage() {
   const products = useProductStore((s) => s.products);
   const categories = useProductStore((s) => s.categories);
   const setProducts = useProductStore((s) => s.setProducts);
+  const setCategories = useProductStore((s) => s.setCategories);
   const addProduct = useProductStore((s) => s.addProduct);
   const updateProduct = useProductStore((s) => s.updateProduct);
   const deleteProduct = useProductStore((s) => s.deleteProduct);
+  const renameCategory = useProductStore((s) => s.renameCategory);
+  const deleteCategory = useProductStore((s) => s.deleteCategory);
   const [agentsList, setAgentsList] = useState<AgentIA[]>(MOCK_AGENTS_IA);
 
   const loadProducts = useCallback(() => productsService.list(), []);
   const loadAgents = useCallback(() => agentsService.list(), []);
+  const mergeCategories = useCallback((items: Product[]) => {
+    const fromDb = items.map((p) => p.category).filter(Boolean);
+    const defaults = useProductStore.getState().categories.slice(0, 5);
+    return [...new Set([...defaults, ...fromDb])];
+  }, []);
+
   const onProductsSuccess = useCallback(
     (data: Product[]) => {
-      if (data.length > 0) setProducts(data);
+      setProducts(data);
+      setCategories(mergeCategories(data));
     },
-    [setProducts],
+    [setProducts, setCategories, mergeCategories],
   );
   const onAgentsSuccess = useCallback((data: AgentIA[]) => {
     setAgentsList(data);
@@ -817,21 +835,25 @@ export default function ProductsPage() {
     setAddOpen(true);
   }, []);
 
-  const handleSaveAdd = useCallback(() => {
+  const handleSaveAdd = useCallback(async () => {
     if (!formData.name.trim() || !formData.price || Number(formData.price) <= 0) return;
     if (!formData.category) return;
-    addProduct({
+    const payload = {
       name: formData.name.trim(),
       price: Number(formData.price) || 0,
       category: formData.category,
       stock: Number(formData.stock) || 0,
       image: formData.image,
-      status: formData.status ? "actif" : "inactif",
+      status: (formData.status ? "actif" : "inactif") as Product["status"],
       assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
-    });
+    };
+    const result = await productsService.create(payload);
+    if (toastIfFailed(result)) return;
+    addProduct(result.data);
+    toast.success("Produit ajouté");
     setAddOpen(false);
     setFormData(EMPTY_FORM);
-    resetPage(); // Go to first page to see new product
+    resetPage();
   }, [formData, addProduct, resetPage]);
 
   const handleOpenEdit = useCallback((product: Product) => {
@@ -840,18 +862,22 @@ export default function ProductsPage() {
     setEditOpen(true);
   }, []);
 
-  const handleSaveEdit = useCallback(() => {
+  const handleSaveEdit = useCallback(async () => {
     if (!editingProduct || !formData.name.trim() || !formData.category) return;
     if (Number(formData.price) <= 0) return;
-    updateProduct(editingProduct.id, {
+    const payload = {
       name: formData.name.trim(),
       price: Number(formData.price) || 0,
       category: formData.category,
       stock: Number(formData.stock) || 0,
       image: formData.image || editingProduct.image,
-      status: formData.status ? "actif" : "inactif",
+      status: (formData.status ? "actif" : "inactif") as Product["status"],
       assignedAgent: formData.assignedAgent === "all" ? null : formData.assignedAgent,
-    });
+    };
+    const result = await productsService.update(editingProduct.id, payload);
+    if (toastIfFailed(result)) return;
+    updateProduct(editingProduct.id, result.data);
+    toast.success("Produit mis à jour");
     setEditOpen(false);
     setEditingProduct(null);
     setFormData(EMPTY_FORM);
@@ -862,18 +888,40 @@ export default function ProductsPage() {
     setDeleteOpen(true);
   }, []);
 
-  const handleConfirmDelete = useCallback(() => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deletingProduct) return;
+    const result = await productsService.remove(deletingProduct.id);
+    if (toastIfFailed(result)) return;
     deleteProduct(deletingProduct.id);
+    toast.success("Produit supprimé");
     setDeleteOpen(false);
     setDeletingProduct(null);
-    // FIX: If deleting caused current page to become empty, go to previous page
     const newFilteredLength = products.filter((p) => p.id !== deletingProduct.id).length;
     const newTotalPages = Math.max(1, Math.ceil(newFilteredLength / ITEMS_PER_PAGE));
     if (currentPage > newTotalPages) {
       setCurrentPage(newTotalPages);
     }
   }, [deletingProduct, deleteProduct, currentPage, products, setCurrentPage]);
+
+  const handleRenameCategory = useCallback(
+    async (oldName: string, newName: string) => {
+      const result = await productsService.renameCategory(oldName, newName);
+      if (toastIfFailed(result)) return;
+      renameCategory(oldName, newName);
+    },
+    [renameCategory],
+  );
+
+  const handleDeleteCategory = useCallback(
+    async (name: string) => {
+      const remaining = categories.filter((c) => c !== name);
+      const fallback = remaining[0] || "";
+      const result = await productsService.deleteCategory(name, fallback);
+      if (toastIfFailed(result)) return;
+      deleteCategory(name);
+    },
+    [categories, deleteCategory],
+  );
 
   const handleCategoryChange = useCallback((val: string) => {
     setCategoryFilter(val);
@@ -1051,7 +1099,10 @@ export default function ProductsPage() {
               Ajoutez, renommez ou supprimez les catégories de votre catalogue.
             </DialogDescription>
           </DialogHeader>
-          <CategoryManager />
+          <CategoryManager
+            onRenameCategory={handleRenameCategory}
+            onDeleteCategory={handleDeleteCategory}
+          />
         </DialogContent>
       </Dialog>
 

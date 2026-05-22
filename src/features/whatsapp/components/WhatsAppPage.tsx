@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Phone,
   Shield,
@@ -16,13 +16,17 @@ import {
   User,
   ArrowRight,
   MessageCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DASHBOARD_PATHS } from "@features/dashboard/constants";
 import { useSessionStore } from "@features/auth/store/sessionStore";
 import { PageHeader } from "@shared/components/feedback/PageHeader";
+import { getPlanWhatsAppSubtitle } from "@shared/services/whatsapp/planLimits";
+import { whatsAppSlotsService } from "@features/whatsapp/service";
+import type { WhatsAppSlotDto, WhatsAppSlotsResponse } from "@features/whatsapp/types";
 
-/* ──────────────────── Feature Badge ──────────────────── */
 function FeatureBadge({
   icon: Icon,
   label,
@@ -40,263 +44,291 @@ function FeatureBadge({
   );
 }
 
-/* ──────────────────── QR Code Modal ──────────────────── */
+function formatCountdown(totalSeconds: number): string {
+  const m = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const s = String(totalSeconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 type ModalStep = "form" | "qr" | "connecting" | "success";
 
 function QRCodeModal({
+  slotIndex,
+  gatewayConfigured,
   onClose,
   onConnected,
   slotName,
   slotPhone,
 }: {
+  slotIndex: number;
+  gatewayConfigured: boolean;
   onClose: () => void;
-  onConnected: (_name: string, _phone: string) => void;
+  onConnected: () => void;
   slotName: string;
   slotPhone: string | null;
 }) {
   const [step, setStep] = useState<ModalStep>("form");
   const [name, setName] = useState(slotName);
   const [phone, setPhone] = useState(slotPhone || "");
-  const [qrTimer, setQrTimer] = useState("14:59");
+  const [qrBase64, setQrBase64] = useState<string | null>(null);
+  const [qrSecondsLeft, setQrSecondsLeft] = useState(900);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Deterministic QR pattern — stable across re-renders
-  const qrPattern = useMemo(() => {
-    return Array.from({ length: 121 }, (_, i) => {
-      const row = Math.floor(i / 11);
-      const col = i % 11;
-      const isCorner =
-        (row < 3 && col < 3) || (row < 3 && col > 7) || (row > 7 && col < 3);
-      // Use a simple deterministic hash instead of Math.random()
-      const hash = ((i * 2654435761) >>> 0) % 100;
-      return isCorner || hash > 50;
-    });
+  const clearTimers = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
-  // QR timer countdown
-  useEffect(() => {
-    if (step === "qr") {
-      timerRef.current = setInterval(() => {
-        setQrTimer((prev) => {
-          const [mins, secs] = prev.split(":").map(Number);
-          const total = mins * 60 + secs;
-          if (total <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            return "00:00";
-          }
-          const next = total - 1;
-          const m = String(Math.floor(next / 60)).padStart(2, "0");
-          const s = String(next % 60).padStart(2, "0");
-          return `${m}:${s}`;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+  useEffect(() => () => clearTimers(), [clearTimers]);
+
+  const startQrCountdown = (expiresInSeconds: number) => {
+    setQrSecondsLeft(expiresInSeconds);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setQrSecondsLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startPolling = useCallback(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      const result = await whatsAppSlotsService.pollStatus(slotIndex);
+      if (!result.success) return;
+      if (result.data.status === "connected") {
+        clearTimers();
+        setStep("success");
+        setTimeout(() => onConnected(), 1200);
       }
+    }, 2500);
+  }, [slotIndex, clearTimers, onConnected]);
+
+  const loadQr = async (refresh = false) => {
+    if (!gatewayConfigured) {
+      setError(
+        "Passerelle WhatsApp non configurée. Définissez WHATSAPP_API_URL et WHATSAPP_API_KEY sur le serveur.",
+      );
+      return;
     }
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [step]);
+    setLoading(true);
+    setError(null);
+    const result = refresh
+      ? await whatsAppSlotsService.refreshQr(slotIndex)
+      : await whatsAppSlotsService.connect(slotIndex, name.trim(), phone.trim());
+
+    setLoading(false);
+    if (!result.success) {
+      setError(result.error.message);
+      return;
+    }
+    setQrBase64(result.data.qrBase64);
+    startQrCountdown(result.data.expiresInSeconds);
+    setStep("qr");
+    startPolling();
+  };
 
   const handleShowQR = () => {
     if (!name.trim() || !phone.trim()) return;
-    setQrTimer("14:59");
-    setStep("qr");
+    void loadQr(false);
   };
 
-  const handleSimulateScan = () => {
-    setStep("connecting");
-    setTimeout(() => {
-      setStep("success");
-      setTimeout(() => {
-        onConnected(name, phone);
-      }, 1500);
-    }, 2000);
+  const handleRefresh = () => {
+    void loadQr(true);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        {/* Close button */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+        role="presentation"
+      />
+      <div className="relative mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white text-neutral-900 shadow-2xl">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-gray-100"
         >
-          <X className="w-5 h-5 text-gray-400" />
+          <X className="h-5 w-5 text-gray-400" />
         </button>
 
-        {/* Step 1: Form */}
+        {error && (
+          <div className="mx-6 mt-6 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {step === "form" && (
           <div className="p-6 sm:p-8">
-            {/* Slot info */}
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900">{slotName}</h2>
               {slotPhone && (
-                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5" />
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+                  <Phone className="h-3.5 w-3.5" />
                   {slotPhone}
                 </p>
               )}
             </div>
 
-            {/* Instruction */}
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              Renseignez le nom et le numéro de téléphone, puis cliquez sur Afficher le QR code.
+            <p className="mb-6 text-sm leading-relaxed text-gray-600">
+              Renseignez le nom et le numéro, puis affichez le QR code à scanner
+              depuis WhatsApp (Paramètres → Appareils associés).
             </p>
 
-            {/* Name input */}
             <div className="mb-4">
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <User className="w-4 h-4 text-gray-400" />
-                </div>
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Nom du numéro"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366]/50 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pr-4 pl-10 text-sm text-gray-900 focus:border-[#25D366]/50 focus:ring-2 focus:ring-[#25D366]/30 focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* Phone input */}
             <div className="mb-6">
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                </div>
+                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Numéro de téléphone"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 focus:border-[#25D366]/50 transition-all"
+                  placeholder="+221 76 000 00 00"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pr-4 pl-10 text-sm text-gray-900 focus:border-[#25D366]/50 focus:ring-2 focus:ring-[#25D366]/30 focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* Submit button */}
             <button
+              type="button"
               onClick={handleShowQR}
-              disabled={!name.trim() || !phone.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!name.trim() || !phone.trim() || loading}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3.5 text-sm font-semibold text-white hover:bg-[#16A34A] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Afficher le QR code
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Afficher le QR code
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </div>
         )}
 
-        {/* Step 2: QR Code */}
         {step === "qr" && (
           <div className="p-6 sm:p-8">
-            {/* Back to form */}
             <button
-              onClick={() => setStep("form")}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors cursor-pointer"
+              type="button"
+              onClick={() => {
+                clearTimers();
+                setStep("form");
+              }}
+              className="mb-4 flex cursor-pointer items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" />
-                <path d="M12 19l-7-7 7-7" />
-              </svg>
-              Retour
+              ← Retour
             </button>
 
-            {/* Slot info */}
-            <div className="flex items-center gap-2 mb-6">
+            <div className="mb-6 flex items-center gap-2">
               <h2 className="text-lg font-bold text-gray-900">{name}</h2>
               <span className="text-sm text-gray-500">— {phone}</span>
             </div>
 
-            {/* QR Code */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative w-56 h-56">
-                <div className="absolute inset-0 bg-[#25D366]/10 rounded-2xl blur-xl" />
-                <div className="relative w-full h-full bg-white rounded-2xl border-2 border-[#25D366]/20 p-3 flex items-center justify-center">
-                  <div className="grid grid-cols-11 gap-0.5 w-full h-full">
-                    {qrPattern.map((isFilled, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-[1px] ${isFilled ? "bg-gray-800" : "bg-gray-100"}`}
-                      />
-                    ))}
-                  </div>
+            <div className="mb-6 flex flex-col items-center">
+              <div className="relative h-56 w-56">
+                <div className="absolute inset-0 rounded-2xl bg-[#25D366]/10 blur-xl" />
+                <div className="relative flex h-full w-full items-center justify-center rounded-2xl border-2 border-[#25D366]/20 bg-white p-3">
+                  {qrBase64 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={qrBase64}
+                      alt="Code QR WhatsApp"
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Loader2 className="h-10 w-10 animate-spin text-[#25D366]" />
+                  )}
                 </div>
-                {/* WhatsApp overlay */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-10 h-10 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg border-4 border-white">
-                  <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
+                <div className="absolute -bottom-3 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border-4 border-white bg-[#25D366] shadow-lg">
+                  <MessageCircle className="h-5 w-5 text-white" />
                 </div>
               </div>
             </div>
 
-            {/* Timer + Refresh */}
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-400 mb-5">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Le code QR expire dans {qrTimer}</span>
-              <button className="flex items-center gap-1 text-[#16A34A] font-medium hover:underline cursor-pointer">
-                <RefreshCw className="w-3 h-3" />
+            <div className="mb-5 flex items-center justify-center gap-2 text-xs text-gray-400">
+              <Clock className="h-3.5 w-3.5" />
+              <span>
+                Le code QR expire dans {formatCountdown(qrSecondsLeft)}
+              </span>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex cursor-pointer items-center gap-1 font-medium text-[#16A34A] hover:underline disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
                 Rafraîchir
               </button>
             </div>
 
-            {/* Steps instructions */}
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3 text-sm">
-                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">1</span>
-                <p className="text-gray-600">Ouvrez WhatsApp sur votre téléphone</p>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">2</span>
-                <p className="text-gray-600">Allez dans <span className="font-semibold text-gray-800">Paramètres</span> → <span className="font-semibold text-gray-800">Appareils associés</span></p>
-              </div>
-              <div className="flex items-start gap-3 text-sm">
-                <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0 mt-0.5">3</span>
-                <p className="text-gray-600">Scannez ce code QR</p>
-              </div>
+            <div className="mb-6 space-y-3">
+              {[
+                "Ouvrez WhatsApp sur votre téléphone",
+                "Allez dans Paramètres → Appareils associés",
+                "Scannez ce code QR",
+              ].map((text, i) => (
+                <div key={text} className="flex items-start gap-3 text-sm">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                    {i + 1}
+                  </span>
+                  <p className="text-gray-600">{text}</p>
+                </div>
+              ))}
             </div>
 
-            {/* Simulate button */}
-            <button
-              onClick={handleSimulateScan}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#16A34A] transition-colors cursor-pointer"
-            >
-              Simuler la connexion
-              <CheckCircle2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-gray-50 py-3 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin text-[#25D366]" />
+              En attente du scan sur votre téléphone…
+            </div>
           </div>
         )}
 
-        {/* Step 3: Connecting */}
         {step === "connecting" && (
-          <div className="p-8 sm:p-10 flex flex-col items-center justify-center min-h-[320px]">
-            <div className="w-16 h-16 rounded-full bg-[#E8F8EF] flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-[#16A34A] animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
-            </div>
-            <p className="text-base font-semibold text-gray-900">Connexion en cours...</p>
-            <p className="text-sm text-gray-500 mt-1">Vérification du code QR</p>
+          <div className="flex min-h-[320px] flex-col items-center justify-center p-10">
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#16A34A]" />
+            <p className="text-base font-semibold text-gray-900">
+              Connexion en cours…
+            </p>
           </div>
         )}
 
-        {/* Step 4: Success */}
         {step === "success" && (
-          <div className="p-8 sm:p-10 flex flex-col items-center justify-center min-h-[320px]">
-            <div className="w-16 h-16 rounded-full bg-[#E8F8EF] flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-8 h-8 text-[#16A34A]" />
+          <div className="flex min-h-[320px] flex-col items-center justify-center p-10">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F8EF]">
+              <CheckCircle2 className="h-8 w-8 text-[#16A34A]" />
             </div>
-            <p className="text-base font-semibold text-gray-900">Connecté avec succès !</p>
-            <p className="text-sm text-gray-500 mt-1">{name} est maintenant actif</p>
+            <p className="text-base font-semibold text-gray-900">
+              Connecté avec succès !
+            </p>
+            <p className="mt-1 text-sm text-gray-500">{name} est maintenant actif</p>
           </div>
         )}
       </div>
@@ -304,8 +336,7 @@ function QRCodeModal({
   );
 }
 
-/* ──────────────────── Number Slot Card ──────────────────── */
-type SlotStatus = "empty" | "connected" | "locked";
+type SlotStatus = WhatsAppSlotDto["status"];
 
 function NumberSlotCard({
   slotNumber,
@@ -315,6 +346,7 @@ function NumberSlotCard({
   onConnect,
   onUpgrade,
   onDisconnect,
+  disconnecting,
 }: {
   slotNumber: number;
   name: string;
@@ -323,40 +355,46 @@ function NumberSlotCard({
   onConnect: () => void;
   onUpgrade: () => void;
   onDisconnect: () => void;
+  disconnecting: boolean;
 }) {
   const isActive = status === "connected";
   const isLocked = status === "locked";
 
   return (
     <div
-      className={`relative rounded-2xl border bg-white text-neutral-900 overflow-hidden transition-shadow duration-200 hover:shadow-lg ${
-        isActive ? "border-[#25D366]/30 shadow-sm" : isLocked ? "border-gray-200 opacity-75" : "border-gray-200 shadow-sm"
+      className={`relative overflow-hidden rounded-2xl border bg-white transition-shadow duration-200 hover:shadow-lg ${
+        isActive
+          ? "border-[#25D366]/30 shadow-sm"
+          : isLocked
+            ? "border-gray-200 opacity-75"
+            : "border-gray-200 shadow-sm"
       }`}
     >
-      {/* Locked badge */}
       {isLocked && (
         <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
-            <Crown className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] font-semibold text-amber-600">Plan Business</span>
+          <div className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1">
+            <Crown className="h-3.5 w-3.5 text-amber-500" />
+            <span className="text-[11px] font-semibold text-amber-600">
+              Plan Business
+            </span>
           </div>
         </div>
       )}
 
-      {/* Connected badge */}
       {isActive && (
         <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-1.5 bg-[#E8F8EF] border border-[#25D366]/20 rounded-full px-2.5 py-1">
-            <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
-            <span className="text-[11px] font-semibold text-[#16A34A]">Connecté</span>
+          <div className="flex items-center gap-1.5 rounded-full border border-[#25D366]/20 bg-[#E8F8EF] px-2.5 py-1">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#25D366]" />
+            <span className="text-[11px] font-semibold text-[#16A34A]">
+              Connecté
+            </span>
           </div>
         </div>
       )}
 
       <div className="p-6">
-        {/* Slot number */}
         <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mb-4 ${
+          className={`mb-4 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
             isActive
               ? "bg-[#25D366] text-white"
               : isLocked
@@ -367,22 +405,23 @@ function NumberSlotCard({
           {slotNumber}
         </div>
 
-        {/* Name */}
-        <h3 className="text-lg font-bold text-gray-900 mb-1">{name}</h3>
+        <h3 className="mb-1 text-lg font-bold text-gray-900">{name}</h3>
 
-        {/* Phone number */}
         {phone && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-            <Phone className="w-4 h-4 text-gray-400" />
+          <div className="mb-3 flex items-center gap-2 text-sm text-gray-500">
+            <Phone className="h-4 w-4 text-gray-400" />
             <span className="font-medium">{phone}</span>
-            <button className="text-gray-400 hover:text-[#16A34A] transition-colors cursor-pointer">
-              <Copy className="w-3.5 h-3.5" />
+            <button
+              type="button"
+              className="cursor-pointer text-gray-400 transition-colors hover:text-[#16A34A]"
+              onClick={() => void navigator.clipboard.writeText(phone)}
+            >
+              <Copy className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
 
-        {/* Description */}
-        <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+        <p className="mb-6 text-sm leading-relaxed text-gray-500">
           {isActive
             ? "Numéro connecté et actif. Votre agent IA répond automatiquement aux messages."
             : isLocked
@@ -390,30 +429,37 @@ function NumberSlotCard({
               : "Aucun numéro connecté. Cliquez sur Connecter pour scanner le QR."}
         </p>
 
-        {/* Action button */}
         <div className="mt-auto">
           {isActive ? (
             <button
+              type="button"
               onClick={onDisconnect}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors cursor-pointer border border-red-200"
+              disabled={disconnecting}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
             >
-              <X className="w-4 h-4" />
+              {disconnecting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <X className="h-4 w-4" />
+              )}
               Déconnecter
             </button>
           ) : isLocked ? (
             <button
+              type="button"
               onClick={onUpgrade}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600"
             >
-              <Crown className="w-4 h-4" />
+              <Crown className="h-4 w-4" />
               Passer au Business
             </button>
           ) : (
             <button
+              type="button"
               onClick={onConnect}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-dark"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white hover:bg-brand-dark"
             >
-              <QrCode className="w-4 h-4" />
+              <QrCode className="h-4 w-4" />
               Connecter
             </button>
           )}
@@ -423,130 +469,175 @@ function NumberSlotCard({
   );
 }
 
-/* ──────────────────── Main Component ──────────────────── */
 export default function WhatsAppPage() {
+  const [data, setData] = useState<WhatsAppSlotsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showQR, setShowQR] = useState<number | null>(null);
-  const [slots, setSlots] = useState<
-    Array<{ name: string; phone: string | null; status: SlotStatus }>
-  >([
-    { name: "Alou Shop", phone: "+221760289607", status: "empty" },
-    { name: "Numéro 2", phone: null, status: "empty" },
-    { name: "Numéro 3", phone: null, status: "locked" },
-  ]);
   const [showToast, setShowToast] = useState<string | null>(null);
+  const [disconnectingSlot, setDisconnectingSlot] = useState<number | null>(null);
   const router = useRouter();
   const setPlanIntent = useSessionStore((s) => s.setPlanIntent);
 
-  const handleConnect = (index: number) => {
-    setShowQR(index);
-  };
-
-  const handleConnected = (name: string, phone: string) => {
-    if (showQR !== null) {
-      setSlots((prev) => {
-        const next = [...prev];
-        next[showQR] = {
-          ...next[showQR],
-          status: "connected",
-          name,
-          phone,
-        };
-        return next;
-      });
-      setShowToast(`${name} connecté avec succès !`);
+  const reload = useCallback(async () => {
+    const result = await whatsAppSlotsService.listSlots();
+    if (!result.success) {
+      setLoadError(result.error.message);
+      return;
     }
+    setData(result.data);
+    setLoadError(null);
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(true);
+      await reload();
+      setLoading(false);
+    })();
+  }, [reload]);
+
+  const handleConnected = async () => {
     setShowQR(null);
+    await reload();
+    setShowToast("Numéro WhatsApp connecté avec succès !");
     setTimeout(() => setShowToast(null), 3000);
   };
 
-  const handleDisconnect = (index: number) => {
-    setSlots((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], status: "empty", phone: null };
-      return next;
-    });
-    setShowToast(`${slots[index].name} déconnecté`);
+  const handleDisconnect = async (slotIndex: number) => {
+    setDisconnectingSlot(slotIndex);
+    const result = await whatsAppSlotsService.disconnect(slotIndex);
+    setDisconnectingSlot(null);
+    if (!result.success) {
+      setShowToast(result.error.message);
+      setTimeout(() => setShowToast(null), 4000);
+      return;
+    }
+    await reload();
+    const name =
+      data?.slots.find((s) => s.slotIndex === slotIndex)?.displayName ??
+      "Numéro";
+    setShowToast(`${name} déconnecté`);
     setTimeout(() => setShowToast(null), 3000);
   };
 
   const handleUpgrade = () => {
-    setShowToast("Redirection vers le plan Business...");
     setPlanIntent("Business");
     router.push(DASHBOARD_PATHS.plan);
-    setTimeout(() => setShowToast(null), 1200);
   };
 
-  const connectedCount = slots.filter((s) => s.status === "connected").length;
+  const activeSlot =
+    showQR !== null ? data?.slots.find((s) => s.slotIndex === showQR) : null;
 
   return (
     <div className="space-y-8 text-neutral-900">
-      {/* Toast */}
       {showToast && (
-        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-right duration-300">
+        <div className="fixed top-6 right-6 z-50">
           <div className="flex items-center gap-3 rounded-xl border border-brand/30 bg-brand-tint px-5 py-3 text-sm font-medium text-brand-dark shadow-lg">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             {showToast}
           </div>
         </div>
       )}
 
-      {/* QR Modal */}
-      {showQR !== null && (
+      {showQR !== null && activeSlot && data && (
         <QRCodeModal
-          slotName={slots[showQR].name}
-          slotPhone={slots[showQR].phone}
+          slotIndex={showQR}
+          gatewayConfigured={data.gatewayConfigured}
+          slotName={activeSlot.displayName}
+          slotPhone={activeSlot.phone}
           onClose={() => setShowQR(null)}
-          onConnected={handleConnected}
+          onConnected={() => void handleConnected()}
         />
       )}
 
       <PageHeader
         icon={MessageCircle}
         title="Connecter vos numéros WhatsApp"
-        subtitle="Plan Pro — jusqu'à 2 numéros simultanés"
+        subtitle={
+          data ? getPlanWhatsAppSubtitle(data.planTier) : "Chargement…"
+        }
         iconBgClass="bg-brand"
         iconClass="text-white"
       />
 
-      {/* Feature badges */}
+      {data && !data.gatewayConfigured && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-semibold">Passerelle WhatsApp non configurée</p>
+            <p className="mt-1 text-amber-900/90">
+              Pour un QR code réel, déployez{" "}
+              <a
+                href="https://doc.evolution-api.com"
+                className="underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Evolution API
+              </a>{" "}
+              puis ajoutez <code className="text-xs">WHATSAPP_API_URL</code> et{" "}
+              <code className="text-xs">WHATSAPP_API_KEY</code> dans{" "}
+              <code className="text-xs">.env.local</code> (redémarrer{" "}
+              <code className="text-xs">npm run dev</code>).
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <FeatureBadge icon={Shield} label="Connexion sécurisée" />
         <FeatureBadge icon={Zap} label="Activation instantanée" />
         <FeatureBadge icon={Bot} label="Réponses 24/7" />
       </div>
 
-      {/* Number slot cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {slots.map((slot, i) => (
-          <NumberSlotCard
-            key={i}
-            slotNumber={i + 1}
-            name={slot.name}
-            phone={slot.phone}
-            status={slot.status}
-            onConnect={() => handleConnect(i)}
-            onUpgrade={handleUpgrade}
-            onDisconnect={() => handleDisconnect(i)}
-          />
-        ))}
-      </div>
-
-      {/* Usage info */}
-      <div className="rounded-2xl border border-brand/20 bg-gradient-to-r from-brand-tint to-brand-soft p-5 text-neutral-900">
-        <div className="flex items-start gap-3">
-          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-brand-dark" />
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">
-              Utilisation de vos slots : {connectedCount} / 2
-            </h3>
-            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-              Avec le Plan Pro, vous pouvez connecter jusqu'à 2 numéros WhatsApp simultanément.
-              Passez au Plan Business pour connecter jusqu'à 3 numéros et profiter de fonctionnalités avancées.
-              Vos messages sont protégés par un chiffrement de bout en bout.
-            </p>
-          </div>
+      {loading && (
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
-      </div>
+      )}
+
+      {loadError && !loading && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {loadError}
+        </div>
+      )}
+
+      {data && !loading && (
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {data.slots.map((slot) => (
+              <NumberSlotCard
+                key={slot.slotIndex}
+                slotNumber={slot.slotIndex}
+                name={slot.displayName}
+                phone={slot.phone}
+                status={slot.status}
+                onConnect={() => setShowQR(slot.slotIndex)}
+                onUpgrade={handleUpgrade}
+                onDisconnect={() => void handleDisconnect(slot.slotIndex)}
+                disconnecting={disconnectingSlot === slot.slotIndex}
+              />
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-brand/20 bg-gradient-to-r from-brand-tint to-brand-soft p-5">
+            <div className="flex items-start gap-3">
+              <Shield className="mt-0.5 h-5 w-5 shrink-0 text-brand-dark" />
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Utilisation de vos slots : {data.connectedCount} / {data.maxSlots}
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                  {getPlanWhatsAppSubtitle(data.planTier)}. Passez au plan
+                  supérieur pour connecter plus de numéros. Connexion via scan QR
+                  (WhatsApp → Appareils associés).
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

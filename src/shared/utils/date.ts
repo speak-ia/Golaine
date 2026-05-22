@@ -72,6 +72,40 @@ export function formatDateShortFromISO(iso: string): string {
 }
 
 /** Parse une date string pour `toLocaleDateString` (contacts) */
+/** Heure relative pour listes de conversations (aujourd’hui → HH:mm, hier → « Hier », sinon jour court). */
+export function formatChatListTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startYesterday = new Date(startToday);
+  startYesterday.setDate(startYesterday.getDate() - 1);
+
+  if (d >= startToday) {
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  }
+  if (d >= startYesterday) return "Hier";
+
+  const diffDays = Math.floor(
+    (startToday.getTime() - d.getTime()) / (24 * 60 * 60 * 1000),
+  );
+  if (diffDays < 7) {
+    const day = d.getDay();
+    return DAYS_FR_SHORT[day === 0 ? 6 : day - 1];
+  }
+
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
+/** Heure HH:mm pour bulles de chat */
+export function formatChatMessageTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
 export function formatDateLocaleShort(dateStr: string): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);

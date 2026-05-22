@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   User,
   Building2,
@@ -23,14 +23,17 @@ import {
   FileSpreadsheet,
   SmartphoneNfc,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { useSessionStore } from "@features/auth/store/sessionStore";
+import { settingsService } from "@features/settings/service";
 import { ConfirmModal } from "@shared/components/feedback/ConfirmModal";
 import { FeedbackBanner } from "@shared/components/feedback/FeedbackBanner";
 import { StatusPill } from "@shared/components/feedback/StatusPill";
 import { useClickOutside } from "@shared/hooks/useClickOutside";
 import { useImageUpload } from "@shared/hooks/useImageUpload";
 import { ToggleSwitch } from "@shared/components/feedback/ToggleSwitch";
+import { getInitials } from "@shared/utils/text";
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -53,6 +56,27 @@ const TABS: Tab[] = [
   { id: "facturation", label: "Facturation", icon: CreditCard },
 ];
 
+const LANG_OPTIONS = ["Français", "English", "Wolof"] as const;
+const LANG_TO_CODE: Record<string, "fr" | "en" | "wo"> = {
+  Français: "fr",
+  English: "en",
+  Wolof: "wo",
+};
+const CODE_TO_LANG: Record<string, string> = {
+  fr: "Français",
+  en: "English",
+  wo: "Wolof",
+};
+const TZ_OPTIONS = ["UTC+1 Dakar", "UTC+0 GMT"] as const;
+const LABEL_TO_IANA: Record<string, string> = {
+  "UTC+1 Dakar": "Africa/Dakar",
+  "UTC+0 GMT": "UTC",
+};
+const IANA_TO_LABEL: Record<string, string> = {
+  "Africa/Dakar": "UTC+1 Dakar",
+  UTC: "UTC+0 GMT",
+};
+
 /* Note: ToggleSwitch extrait en composant réutilisable */
 
 /* Note: ConfirmModal / FeedbackBanner / StatusPill extraits en composants réutilisables */
@@ -62,9 +86,11 @@ const TABS: Tab[] = [
    ═══════════════════════════════════════════════════════════════ */
 
 function ProfilTab() {
-  const [name, setName] = useState("Alassane Amadou Diallo");
-  const [email, setEmail] = useState("alassane@golaine.sn");
-  const [phone, setPhone] = useState("+221 77 *** ** 67");
+  const [load, setLoad] = useState(true);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [lang, setLang] = useState("Français");
   const [tz, setTz] = useState("UTC+1 Dakar");
   const [langOpen, setLangOpen] = useState(false);
@@ -73,8 +99,30 @@ function ProfilTab() {
   const { profilePhoto, setProfilePhoto } = useSessionStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isValidEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-  const emailError = email.length > 0 && !isValidEmail(email);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const r = await settingsService.getProfileDetails();
+      if (cancelled) return;
+      setLoad(false);
+      if (!r.success) {
+        setFeedback({
+          type: "error",
+          msg: r.error.message || "Impossible de charger le profil.",
+        });
+        return;
+      }
+      setName(r.data.displayName);
+      setEmail(r.data.email);
+      setPhone(r.data.phone);
+      setLang(CODE_TO_LANG[r.data.locale] ?? "Français");
+      setTz(IANA_TO_LABEL[r.data.timezone] ?? "UTC+1 Dakar");
+      setProfilePhoto(r.data.avatarUrl);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [setProfilePhoto]);
 
   useClickOutside(
     dropdownRef,
@@ -92,19 +140,47 @@ function ProfilTab() {
   } = useImageUpload({
     onLoaded: (url) => {
       setProfilePhoto(url);
-      setFeedback({ type: "success", msg: "Photo mise à jour avec succès !" });
+      setFeedback({ type: "success", msg: "Photo prête — pensez à sauvegarder pour l’enregistrer." });
     },
   });
 
-  const handleSaveProfil = () => {
-    if (!name.trim()) { setFeedback({ type: "error", msg: "Le nom est requis." }); return; }
-    if (!email.trim() || !isValidEmail(email)) { setFeedback({ type: "error", msg: "Veuillez entrer un email valide." }); return; }
-    if (!phone.trim()) { setFeedback({ type: "error", msg: "Le téléphone est requis." }); return; }
-    setFeedback({ type: "success", msg: "Profil mis à jour avec succès !" });
+  const handleSaveProfil = async () => {
+    if (!name.trim()) {
+      setFeedback({ type: "error", msg: "Le nom est requis." });
+      return;
+    }
+    if (!phone.trim()) {
+      setFeedback({ type: "error", msg: "Le téléphone est requis." });
+      return;
+    }
+    setSaveBusy(true);
+    const code = LANG_TO_CODE[lang] ?? "fr";
+    const iana = LABEL_TO_IANA[tz] ?? "Africa/Dakar";
+    const r = await settingsService.updateProfileDetails({
+      displayName: name.trim(),
+      phone: phone.trim(),
+      locale: code,
+      timezone: iana,
+      avatarUrl: profilePhoto,
+    });
+    setSaveBusy(false);
+    if (!r.success) {
+      setFeedback({
+        type: "error",
+        msg: r.error.message || "Enregistrement impossible. Avez-vous exécuté la migration SQL sur Supabase ?",
+      });
+      return;
+    }
+    setFeedback({ type: "success", msg: "Profil enregistré." });
   };
 
-  const langs = ["Français", "English", "Wolof"];
-  const timezones = ["UTC+0 GMT", "UTC+1 Dakar"];
+  if (load) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-10 w-10 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -124,7 +200,7 @@ function ProfilTab() {
             {profilePhoto ? (
               <img src={profilePhoto} alt="Photo" className="w-full h-full object-cover" />
             ) : (
-              "AD"
+              getInitials(name.trim() || "?")
             )}
           </div>
           <div>
@@ -172,17 +248,14 @@ function ProfilTab() {
           <label className="block text-sm font-medium text-gray-600 mb-1.5">Email</label>
           <input
             type="email"
+            readOnly
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`w-full px-4 py-2.5 rounded-xl border text-sm text-gray-900 focus:outline-none focus:ring-2 transition-all ${
-              emailError
-                ? "border-red-500 focus:ring-red-500/30 focus:border-red-500"
-                : "border-gray-200 focus:ring-brand/30 focus:border-brand"
-            }`}
+            className="w-full cursor-not-allowed bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600"
           />
-          {emailError && (
-            <p className="text-xs text-red-500 mt-1">Veuillez entrer un email valide.</p>
-          )}
+          <p className="text-xs text-gray-500 mt-1">
+            L’e-mail vient de votre compte Supabase Auth. Pour le modifier, utilisez la récupération de compte ou le
+            dashboard Supabase.
+          </p>
         </div>
 
         <div>
@@ -212,7 +285,7 @@ function ProfilTab() {
               </button>
               {langOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
-                  {langs.map((l) => (
+                  {LANG_OPTIONS.map((l) => (
                     <button
                       key={l}
                       onClick={() => { setLang(l); setLangOpen(false); }}
@@ -243,7 +316,7 @@ function ProfilTab() {
               </button>
               {tzOpen && (
                 <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1">
-                  {timezones.map((t) => (
+                  {TZ_OPTIONS.map((t) => (
                     <button
                       key={t}
                       onClick={() => { setTz(t); setTzOpen(false); }}
@@ -262,10 +335,19 @@ function ProfilTab() {
 
         <div className="pt-2">
           <button
-            onClick={handleSaveProfil}
-            className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-brand to-brand-dark hover:opacity-90 rounded-xl transition-opacity cursor-pointer"
+            type="button"
+            disabled={saveBusy}
+            onClick={() => void handleSaveProfil()}
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-brand to-brand-dark hover:opacity-90 rounded-xl transition-opacity cursor-pointer disabled:opacity-50"
           >
-            Sauvegarder
+            {saveBusy ? (
+              <>
+                <Loader2 className="inline h-4 w-4 animate-spin mr-2 align-[-2px]" />
+                Enregistrement…
+              </>
+            ) : (
+              "Sauvegarder"
+            )}
           </button>
         </div>
       </div>
@@ -278,14 +360,45 @@ function ProfilTab() {
    ═══════════════════════════════════════════════════════════════ */
 
 function EntrepriseTab() {
-  const [nom, setNom] = useState("Boutique Alassane Mode");
-  const [desc, setDesc] = useState("Boutique de mode africaine contemporaine, spécialisée dans les vêtements wax et les accessoires artisanaux.");
-  const [adresse, setAdresse] = useState("Plateau, Dakar, Sénégal");
+  const [load, setLoad] = useState(true);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [nom, setNom] = useState("");
+  const [desc, setDesc] = useState("");
+  const [adresse, setAdresse] = useState("");
   const [secteur, setSecteur] = useState("Mode");
-  const [siteWeb, setSiteWeb] = useState("www.alassanemode.sn");
+  const [siteWeb, setSiteWeb] = useState("");
   const [secteurOpen, setSecteurOpen] = useState(false);
   const [logoUploaded, setLogoUploaded] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const r = await settingsService.getBusiness();
+      if (cancelled) return;
+      setLoad(false);
+      if (!r.success) {
+        setFeedback({
+          type: "error",
+          msg: r.error.message || "Impossible de charger l’entreprise.",
+        });
+        return;
+      }
+      setNom(r.data.legalName);
+      setDesc(r.data.description);
+      setAdresse(r.data.address);
+      setSecteur(r.data.sector || "Mode");
+      setSiteWeb(r.data.website);
+      if (r.data.logoUrl) {
+        setLogoUploaded(true);
+        setLogoDataUrl(r.data.logoUrl);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     inputRef: logoInputRef,
@@ -293,13 +406,43 @@ function EntrepriseTab() {
     onChange: onLogoChange,
   } = useImageUpload({
     maxBytes: 2 * 1024 * 1024,
-    onLoaded: () => {
+    onLoaded: (url) => {
       setLogoUploaded(true);
-      setFeedback({ type: "success", msg: "Logo téléchargé avec succès !" });
+      setLogoDataUrl(url);
+      setFeedback({ type: "success", msg: "Logo prêt — sauvegardez pour l’enregistrer." });
     },
   });
 
   const secteurs = ["Mode", "Alimentation", "Beauté", "Électronique", "Autre"];
+
+  const handleSaveEntreprise = async () => {
+    setSaveBusy(true);
+    const r = await settingsService.saveBusiness({
+      legalName: nom.trim(),
+      description: desc.trim(),
+      address: adresse.trim(),
+      sector: secteur.trim(),
+      website: siteWeb.trim(),
+      logoUrl: logoDataUrl,
+    });
+    setSaveBusy(false);
+    if (!r.success) {
+      setFeedback({
+        type: "error",
+        msg: r.error.message || "Enregistrement impossible.",
+      });
+      return;
+    }
+    setFeedback({ type: "success", msg: "Informations de l’entreprise enregistrées." });
+  };
+
+  if (load) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-10 w-10 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -408,6 +551,7 @@ function EntrepriseTab() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setLogoUploaded(false);
+                    setLogoDataUrl(null);
                   }}
                   className="text-xs text-gray-500 hover:text-red-500 transition-colors cursor-pointer mt-1"
                 >
@@ -426,10 +570,19 @@ function EntrepriseTab() {
 
         <div className="pt-2">
           <button
-            onClick={() => setFeedback({ type: "success", msg: "Informations de l'entreprise mises à jour !" })}
-            className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-brand to-brand-dark hover:opacity-90 rounded-xl transition-opacity cursor-pointer"
+            type="button"
+            disabled={saveBusy}
+            onClick={() => void handleSaveEntreprise()}
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-brand to-brand-dark hover:opacity-90 rounded-xl transition-opacity cursor-pointer disabled:opacity-50"
           >
-            Sauvegarder
+            {saveBusy ? (
+              <>
+                <Loader2 className="inline h-4 w-4 animate-spin mr-2 align-[-2px]" />
+                Enregistrement…
+              </>
+            ) : (
+              "Sauvegarder"
+            )}
           </button>
         </div>
       </div>

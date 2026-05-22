@@ -9,6 +9,7 @@ export enum ErrorCode {
   UNAUTHORIZED = "UNAUTHORIZED",
   NOT_FOUND = "NOT_FOUND",
   CONFLICT = "CONFLICT",
+  SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE",
   INTERNAL_ERROR = "INTERNAL_ERROR",
 }
 /* eslint-enable no-unused-vars */
@@ -76,3 +77,12 @@ export class InternalServerError extends AppError {
     super(message, ErrorCode.INTERNAL_ERROR, 500, false);
   }
 }
+
+export class ServiceUnavailableError extends AppError {
+  constructor(
+    message = "Service temporairement indisponible. Réessayez plus tard.",
+  ) {
+    super(message, ErrorCode.SERVICE_UNAVAILABLE, 503);
+  }
+}
+
