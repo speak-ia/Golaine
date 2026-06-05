@@ -15,11 +15,21 @@ const SUPABASE_ENV_HINT =
   "Ajoutez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans .env.local à la racine du projet, puis redémarrez complètement `npm run dev`. Vérifiez http://localhost:3000/api/health/supabase (projectRef doit correspondre au projet Supabase).";
 
 /* ──────────────────── Google Button ──────────────────── */
-function GoogleButton({ label }: { label: string }) {
+function GoogleButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
-      className="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-xl bg-[rgb(38,38,38)] border border-white/[0.08] hover:bg-[rgb(48,48,48)] transition-all duration-200 cursor-pointer group"
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-xl bg-[rgb(38,38,38)] border border-white/[0.08] hover:bg-[rgb(48,48,48)] transition-all duration-200 cursor-pointer group disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <svg width="20" height="20" viewBox="0 0 48 48">
         <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
@@ -162,6 +172,33 @@ function SignUpPage() {
     setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        const supabase = createBrowserSupabaseClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (error) {
+          toast.error("Connexion Google impossible", {
+            description: error.message || "Une erreur est survenue.",
+          });
+        }
+      } else {
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
+      }
+    } catch (error: unknown) {
+      toast.error("Erreur de connexion", {
+        description: "Une erreur est survenue lors de la redirection.",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.businessName.trim() || !form.email.trim() || !form.password.trim()) return;
@@ -255,7 +292,11 @@ function SignUpPage() {
           </div>
 
           {/* Google Button */}
-          <GoogleButton label="Continuer avec Google" />
+          <GoogleButton
+            label="Continuer avec Google"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          />
 
           {/* Divider */}
           <Divider />
@@ -346,6 +387,33 @@ function LoginPage() {
     setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        const supabase = createBrowserSupabaseClient();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (error) {
+          toast.error("Connexion Google impossible", {
+            description: error.message || "Une erreur est survenue.",
+          });
+        }
+      } else {
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
+      }
+    } catch (error: unknown) {
+      toast.error("Erreur de connexion", {
+        description: "Une erreur est survenue lors de la redirection.",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email.trim() || !form.password.trim()) return;
@@ -427,7 +495,11 @@ function LoginPage() {
           </div>
 
           {/* Google Button */}
-          <GoogleButton label="Continuer avec Google" />
+          <GoogleButton
+            label="Continuer avec Google"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          />
 
           {/* Divider */}
           <Divider />
