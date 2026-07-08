@@ -79,7 +79,7 @@ export default function DashboardHeader() {
         if (!cancelled) {
           setHeaderProfile({
             name: "Alassane",
-            email: "alassane@golaine.sn",
+            email: "alassane@luumo.ai",
             planTier: "Pro",
           });
         }

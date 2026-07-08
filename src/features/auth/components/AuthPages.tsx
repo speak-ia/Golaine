@@ -525,12 +525,12 @@ function LoginPage() {
 
             {/* Forgot password */}
             <div className="text-right">
-              <a
-                href="#"
+              <Link
+                href="/forgot-password"
                 className="text-sm text-[rgb(37,211,102)] hover:underline"
               >
                 Mot de passe oublié ?
-              </a>
+              </Link>
             </div>
 
             {/* Submit */}
@@ -563,13 +563,290 @@ function LoginPage() {
   );
 }
 
-export type AuthInitialView = "login" | "signup";
+/* ──────────────────── FORGOT PASSWORD PAGE ──────────────────── */
+function ForgotPasswordPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const supabase = createBrowserSupabaseClient();
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        });
+        if (error) {
+          toast.error("Impossible d'envoyer le lien", {
+            description: error.message || "Une erreur est survenue.",
+          });
+          return;
+        }
+        setSubmitted(true);
+        toast.success("Lien envoyé !", {
+          description: "Veuillez vérifier votre boîte de réception pour réinitialiser votre mot de passe.",
+        });
+      } else {
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
+      }
+    } catch (error: unknown) {
+      logger.error("Échec envoi réinitialisation mot de passe", {
+        error:
+          error instanceof Error
+            ? { name: error.name, message: error.message }
+            : { raw: String(error) },
+      });
+      toast.error("Une erreur est survenue. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative flex min-h-screen items-center justify-center overflow-x-clip px-4 py-12"
+    >
+      <div className="absolute top-1/4 -left-32 w-[400px] h-[400px] rounded-full bg-[rgb(37,211,102)]/[0.06] blur-[120px]" />
+      <div className="absolute bottom-1/4 -right-32 w-[350px] h-[350px] rounded-full bg-[rgb(37,211,102)]/[0.04] blur-[100px]" />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={() => router.push("/login")}
+          className="mb-8 flex items-center gap-2 text-sm text-[rgb(148,163,184)] transition-colors hover:text-white group"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+          Retour à la connexion
+        </button>
+
+        {/* Card */}
+        <div className="rounded-2xl border border-white/[0.07] bg-[rgb(22,22,22)] p-8 shadow-2xl shadow-black/40 sm:p-10">
+          {/* Logo */}
+          <div className="mb-6 flex justify-center">
+            <BrandLogo variant="auth" size="md" />
+          </div>
+
+          {!submitted ? (
+            <>
+              {/* Header */}
+              <div className="mb-8 text-center">
+                <h1 className="mb-2 text-2xl font-bold text-white sm:text-[28px]">
+                  Mot de passe oublié ?
+                </h1>
+                <p className="text-sm text-[rgb(148,163,184)] leading-relaxed">
+                  Saisissez votre e-mail pour recevoir un lien de réinitialisation.
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <FormInput
+                  id="email"
+                  label="Email"
+                  type="email"
+                  placeholder="vous@exemple.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  icon={Mail}
+                />
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-white font-semibold text-sm hover:opacity-90 transition-all duration-200 shadow-lg shadow-[rgb(37,211,102)]/20 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Envoi en cours...
+                    </>
+                  ) : (
+                    "Envoyer le lien"
+                  )}
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <div className="mb-4 flex justify-center text-[rgb(37,211,102)]">
+                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Vérifiez vos e-mails</h2>
+              <p className="text-sm text-[rgb(148,163,184)] leading-relaxed mb-6">
+                Un e-mail de réinitialisation de mot de passe a été envoyé à{" "}
+                <span className="text-white font-medium">{email}</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSubmitted(false)}
+                className="text-sm text-[rgb(37,211,102)] hover:underline font-medium"
+              >
+                Renvoyer le lien
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ──────────────────── RESET PASSWORD PAGE ──────────────────── */
+function ResetPasswordPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim()) return;
+    if (password.length < 6) {
+      toast.error("Mot de passe trop court", {
+        description: "Le mot de passe doit contenir au moins 6 caractères.",
+      });
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Mots de passe différents", {
+        description: "Les deux mots de passe saisis ne correspondent pas.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const supabase = createBrowserSupabaseClient();
+        const { error } = await supabase.auth.updateUser({
+          password: password,
+        });
+        if (error) {
+          toast.error("Impossible de réinitialiser", {
+            description: error.message || "Une erreur est survenue.",
+          });
+          return;
+        }
+        toast.success("Mot de passe réinitialisé !", {
+          description: "Votre mot de passe a été mis à jour avec succès. Connexion en cours...",
+        });
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        toast.error("Supabase non détecté dans l’application", {
+          description: SUPABASE_ENV_HINT,
+        });
+      }
+    } catch (error: unknown) {
+      logger.error("Échec mise à jour mot de passe", {
+        error:
+          error instanceof Error
+            ? { name: error.name, message: error.message }
+            : { raw: String(error) },
+      });
+      toast.error("Une erreur est survenue. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative flex min-h-screen items-center justify-center overflow-x-clip px-4 py-12"
+    >
+      <div className="absolute top-1/4 -left-32 w-[400px] h-[400px] rounded-full bg-[rgb(37,211,102)]/[0.06] blur-[120px]" />
+      <div className="absolute bottom-1/4 -right-32 w-[350px] h-[350px] rounded-full bg-[rgb(37,211,102)]/[0.04] blur-[100px]" />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Card */}
+        <div className="rounded-2xl border border-white/[0.07] bg-[rgb(22,22,22)] p-8 shadow-2xl shadow-black/40 sm:p-10">
+          {/* Logo */}
+          <div className="mb-6 flex justify-center">
+            <BrandLogo variant="auth" size="md" />
+          </div>
+
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <h1 className="mb-2 text-2xl font-bold text-white sm:text-[28px]">
+              Nouveau mot de passe
+            </h1>
+            <p className="text-sm text-[rgb(148,163,184)] leading-relaxed">
+              Saisissez votre nouveau mot de passe sécurisé.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <PasswordInput
+              id="password"
+              label="Nouveau mot de passe"
+              placeholder="6 caractères minimum"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <PasswordInput
+              id="confirmPassword"
+              label="Confirmer le mot de passe"
+              placeholder="Confirmez le mot de passe"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] text-white font-semibold text-sm hover:opacity-90 transition-all duration-200 shadow-lg shadow-[rgb(37,211,102)]/20 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Mise à jour en cours...
+                </>
+              ) : (
+                "Enregistrer le mot de passe"
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export type AuthInitialView = "login" | "signup" | "forgot-password" | "reset-password";
 
 /* ──────────────────── AUTH ROUTER ──────────────────── */
 export default function AuthPages({ initialView = "login" }: { initialView?: AuthInitialView }) {
   return (
     <AnimatePresence mode="wait">
-      {initialView === "signup" ? <SignUpPage key="signup" /> : <LoginPage key="login" />}
+      {initialView === "signup" ? (
+        <SignUpPage key="signup" />
+      ) : initialView === "forgot-password" ? (
+        <ForgotPasswordPage key="forgot-password" />
+      ) : initialView === "reset-password" ? (
+        <ResetPasswordPage key="reset-password" />
+      ) : (
+        <LoginPage key="login" />
+      )}
     </AnimatePresence>
   );
 }

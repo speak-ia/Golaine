@@ -68,7 +68,7 @@ const settingsServiceMock: SettingsService = {
   async getProfileDetails() {
     return ok({
       displayName: "Alassane Amadou Diallo",
-      email: "alassane@golaine.sn",
+      email: "alassane@luumo.ai",
       planTier: "Pro",
       phone: "+221 77 000 00 67",
       locale: "fr",

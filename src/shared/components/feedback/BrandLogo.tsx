@@ -14,7 +14,7 @@ type BrandLogoProps = {
   size?: "sm" | "md";
   /** `marketing` : taille fixe (footer) sans breakpoint `sm:`. */
   tight?: boolean;
-  /** Afficher le libellé « Golaine » (désactiver pour favicon-only). */
+  /** Afficher le libellé « LuumoAI » (désactiver pour favicon-only). */
   showText?: boolean;
   className?: string;
 };
@@ -51,7 +51,7 @@ export function BrandLogo({
             {checkGlyph}
           </svg>
         </div>
-        {showText ? <span className={cn("font-bold text-white", textSize)}>Golaine</span> : null}
+        {showText ? <span className={cn("font-bold text-white", textSize)}>LuumoAI</span> : null}
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function BrandLogo({
               {checkGlyph}
             </svg>
           </div>
-          {showText ? <span className="text-lg font-bold text-white">Golaine</span> : null}
+          {showText ? <span className="text-lg font-bold text-white">LuumoAI</span> : null}
         </div>
       );
     }
@@ -95,7 +95,7 @@ export function BrandLogo({
           </svg>
         </div>
         {showText ? (
-          <span className="text-lg font-bold text-white sm:text-xl">Golaine</span>
+          <span className="text-lg font-bold text-white sm:text-xl">LuumoAI</span>
         ) : null}
       </div>
     );
@@ -118,7 +118,7 @@ export function BrandLogo({
           {checkGlyph}
         </svg>
       </div>
-      {showText ? <span className="truncate text-lg font-bold text-gray-900">Golaine</span> : null}
+      {showText ? <span className="truncate text-lg font-bold text-gray-900">LuumoAI</span> : null}
     </div>
   );
 }

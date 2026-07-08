@@ -37,7 +37,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Marque Golaine / WhatsApp — requis ici (Tailwind v4 : @theme ; tailwind.config.ts seul ne suffit pas) */
+  /* Marque LuumoAI / WhatsApp — requis ici (Tailwind v4 : @theme ; tailwind.config.ts seul ne suffit pas) */
   --color-brand: #25d366;
   --color-brand-dark: #16a34a;
   --color-brand-tint: #e8f8ef;

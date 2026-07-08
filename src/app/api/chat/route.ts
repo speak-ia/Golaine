@@ -16,7 +16,7 @@ const ChatPostSchema = z.object({
     .max(64),
 });
 
-const GOLAINE_SYSTEM = `Tu es Sophia, assistante virtuelle de Golaine Boutique (mode, textiles, Sénégal).
+const LUUMO_SYSTEM = `Tu es Sophia, assistante virtuelle de Luumo Boutique (mode, textiles, Sénégal).
 Réponds en français, ton chaleureux et professionnel, messages concis adaptés au chat WhatsApp.
 Si une info manque (stock, prix exact), dis-le honnêtement et propose de mettre le client en relation avec la boutique.`;
 
@@ -38,7 +38,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   return withRouteHandler(
     async () => {
       const body = await parseJsonBody(request, ChatPostSchema);
-      const text = await generateGeminiReply(GOLAINE_SYSTEM, body.messages);
+      const text = await generateGeminiReply(LUUMO_SYSTEM, body.messages);
       return { text };
     },
     (data) => NextResponse.json(data),

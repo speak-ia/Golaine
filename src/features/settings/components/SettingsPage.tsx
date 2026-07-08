@@ -860,7 +860,7 @@ function IntegrationsTab() {
   const [mobileConnected, setMobileConnected] = useState(false);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
 
-  const MOCK_API_KEY = "sk-golaine-****...****-a1b2";
+  const MOCK_API_KEY = "sk-luumo-****...****-a1b2";
 
   const copyApiKey = async () => {
     try {
@@ -980,14 +980,14 @@ function IntegrationsTab() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900">API</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Utilisez notre API pour intégrer Golaine dans vos systèmes existants.
+              Utilisez notre API pour intégrer LuumoAI dans vos systèmes existants.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-gray-50 rounded-xl">
           <code className="flex-1 text-sm text-gray-700 font-mono select-all">
-            sk-golaine-****...****-a1b2
+            sk-luumo-****...****-a1b2
           </code>
           <div className="flex items-center gap-2">
             <button

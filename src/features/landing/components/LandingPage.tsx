@@ -248,7 +248,7 @@ function HeroSection() {
 
             <FadeIn delay={0.1}>
               <p className="text-lg sm:text-xl text-[rgb(148,163,184)] max-w-lg leading-relaxed">
-                Golaine est votre assistant commercial IA sur WhatsApp. Il répond
+                LuumoAI est votre assistant commercial IA sur WhatsApp. Il répond
                 à vos clients, enregistre les commandes et booste vos ventes —
                 24h/24, 7j/7.
               </p>
@@ -439,7 +439,7 @@ function TrustedBySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeIn>
           <p className="text-center text-sm text-[rgb(100,116,139)] mb-8 tracking-wide uppercase">
-            Ils font confiance à Golaine
+            Ils font confiance à LuumoAI
           </p>
         </FadeIn>
         <FadeIn delay={0.1}>
@@ -504,7 +504,7 @@ function WhatIfSection() {
         </FadeIn>
         <FadeIn delay={0.1}>
           <p className="text-center text-[rgb(148,163,184)] text-lg max-w-2xl mx-auto mb-14">
-            Golaine transforme votre WhatsApp en machine de vente automatisée.
+            LuumoAI transforme votre WhatsApp en machine de vente automatisée.
           </p>
         </FadeIn>
 
@@ -701,14 +701,14 @@ function DemoVideoSection() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center text-white mb-4">
             Voyez{" "}
             <span className="bg-gradient-to-r from-[rgb(37,211,102)] to-[rgb(22,163,74)] bg-clip-text text-transparent">
-              Golaine
+              LuumoAI
             </span>{" "}
             en action
           </h2>
         </FadeIn>
         <FadeIn delay={0.15}>
           <p className="text-center text-[rgb(148,163,184)] text-lg max-w-2xl mx-auto mb-12">
-            Découvrez comment Golaine transforme chaque conversation en vente.
+            Découvrez comment LuumoAI transforme chaque conversation en vente.
           </p>
         </FadeIn>
 
@@ -723,7 +723,7 @@ function DemoVideoSection() {
               </div>
               <p className="text-xl font-bold text-white mb-2">Vidéo de démonstration</p>
               <p className="text-sm text-[rgb(148,163,184)] max-w-md text-center">
-                Découvrez comment Golaine transforme chaque conversation en vente en 2 minutes.
+                Découvrez comment LuumoAI transforme chaque conversation en vente en 2 minutes.
               </p>
               <p className="text-xs text-[rgb(100,116,139)] mt-4">
                 Vidéo bientôt disponible
@@ -769,7 +769,7 @@ function ROISection() {
     "Ventes manquées la nuit et le week-end",
     "Ressources gaspillées sur des tâches répétitives",
   ];
-  const withGolaine = [
+  const withLuumo = [
     "Réponse instantanée à chaque message client",
     "Enregistrement automatique de chaque commande",
     "Informations produit toujours exactes et à jour",
@@ -829,7 +829,7 @@ function ROISection() {
                   <X className="w-5 h-5 text-[rgb(239,68,68)]" />
                 </div>
                 <h3 className="text-xl font-semibold text-[rgb(248,113,113)]">
-                  Sans Golaine
+                  Sans LuumoAI
                 </h3>
               </div>
               <ul className="space-y-4">
@@ -855,11 +855,11 @@ function ROISection() {
                   <Check className="w-5 h-5 text-[rgb(37,211,102)]" />
                 </div>
                 <h3 className="text-xl font-semibold text-[rgb(37,211,102)]">
-                  Avec Golaine
+                  Avec LuumoAI
                 </h3>
               </div>
               <ul className="space-y-4">
-                {withGolaine.map((item) => (
+                {withLuumo.map((item) => (
                   <li key={item} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-[rgb(37,211,102)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-[rgb(37,211,102)]" />
@@ -1224,7 +1224,7 @@ function FinalCTASection() {
         <FadeIn delay={0.15}>
           <p className="text-lg text-[rgb(148,163,184)] mb-10 max-w-xl mx-auto">
             Rejoignez plus de 500 commerçants africains qui boostent leurs
-            ventes avec Golaine. Essai gratuit, sans carte bancaire.
+            ventes avec LuumoAI. Essai gratuit, sans carte bancaire.
           </p>
         </FadeIn>
         <FadeIn delay={0.25}>
@@ -1355,7 +1355,7 @@ function Footer() {
       <div className="border-t border-white/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[rgb(100,116,139)]">
-            © {new Date().getFullYear()} Golaine. Tous droits réservés.
+            © {new Date().getFullYear()} LuumoAI. Tous droits réservés.
           </p>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/[0.07]">
             <div className="w-1.5 h-1.5 rounded-full bg-[rgb(37,211,102)] pulse-dot" />

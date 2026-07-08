@@ -1,7 +1,7 @@
 /** Nom d'instance Evolution API stable par utilisateur + slot (1–3). */
 export function buildWhatsAppInstanceName(userId: string, slotIndex: number): string {
   const safeUser = userId.replace(/-/g, "").slice(0, 16);
-  return `golaine_${safeUser}_s${slotIndex}`;
+  return `luumo_${safeUser}_s${slotIndex}`;
 }
 
 export function normalizePhoneDigits(phone: string): string {
